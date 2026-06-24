@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mahjong Zen Clásico - Edición Premium</title>
+    
+    <!-- Soporte avanzado para Web App de Apple (Pantalla Completa en iPhone) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Tailwind CSS para diseño fluido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts con tipografía elegante -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght=0,600;0,700;1,600&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Iconos FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background: radial-gradient(circle, #051c0d 0%, #010703 100%);
+            /* dvh asegura que Safari iOS no tenga problemas de desbordamiento por la barra de direcciones */
+            height: 100vh;
+            height: 100dvh;
+        }
+        .font-serif-elegant {
+            font-family: 'Playfair Display', serif;
+        }
+        .font-chinese {
+            font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        /* Efecto de tapete de fieltro verde profundo con textura suave */
+        .felt-table {
+            background-color: #062b14;
+            background-image: radial-gradient(#093f1d 15%, transparent 20%),
+                              radial-gradient(#03180b 15%, transparent 20%);
+            background-size: 10px 10px;
+            background-position: 0 0, 5px 5px;
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.9);
+        }
+
+        /* Fichas Mahjong con perspectiva 3D realista */
+        .tile-3d {
+            transition: all 0.12s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform-style: preserve-3d;
+            perspective: 600px;
+        }
+
+        /* Cuerpo de porcelana marfil pulida */
+        .tile-body {
+            background: linear-gradient(135deg, #ffffff 0%, #fdfaf2 40%, #f7edd3 90%, #f0e1bc 100%);
+            border-radius: 6px;
+            border: 1px solid rgba(220, 205, 175, 0.95);
+            /* Sombra multicapa para simular grosor e iluminación */
+            box-shadow: 
+                0.5px 0.5px 0px #ebdcb7,
+                1px 1px 0px #e1cd9f,
+                1.5px 1.5px 0px #d4bc88,
+                2px 2px 0px #caa165,
+                /* Base de Jade Imperial translúcida */
+                2.5px 2.5px 0px #115e2e,
+                3px 3px 0px #0b4520,
+                3.5px 3.5px 0px #062b14,
+                /* Sombra física sobre el fieltro */
+                4px 5px 6px rgba(0, 0, 0, 0.55),
+                inset 0 1px 1px rgba(255,255,255,0.9);
+            transform: translateY(0px);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        /* Base verde jade inferior de la ficha */
+        .tile-base-jade {
+            position: absolute;
+            bottom: -3.5px;
+            left: 1px;
+            right: 1px;
+            height: 3px;
+            background: linear-gradient(to bottom, #115e2e, #05210f);
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            z-index: -1;
+        }
+
+        /* Efecto Hover (sólo dispositivos con ratón) */
+        @media (hover: hover) {
+            .tile-playable:hover .tile-body {
+                transform: translateY(-3px);
+                background: linear-gradient(135deg, #ffffff 0%, #faf6ec 100%);
+                box-shadow: 
+                    0.5px 0.5px 0px #ebdcb7,
+                    1px 1.5px 0px #e1cd9f,
+                    2px 2.5px 0px #d4bc88,
+                    3px 3.5px 0px #caa165,
+                    3.5px 4px 0px #115e2e,
+                    4px 4.5px 0px #0b4520,
+                    5px 6px 8px rgba(0, 0, 0, 0.65);
+                cursor: pointer;
+            }
+        }
+
+        /* Ficha seleccionada: Brillo dorado imperial de porcelana fina */
+        .tile-selected .tile-body {
+            transform: translateY(-5px) scale(1.02);
+            background: linear-gradient(135deg, #fffdf2 0%, #fef3c7 50%, #fde68a 100%) !important;
+            border-color: #f59e0b !important;
+            box-shadow: 
+                0 0 14px rgba(245, 158, 11, 0.85),
+                0.5px 0.5px 0px #fbbf24,
+                1px 1.5px 0px #d97706,
+                2px 2.5px 0px #b45309,
+                3px 3.5px 0px #78350f,
+                3.5px 4px 0px #115e2e,
+                4px 5px 10px rgba(217, 119, 6, 0.45) !important;
+        }
+
+        /* Animación para sugerencias (Pista) activa */
+        .tile-hint .tile-body {
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        @keyframes pulseHint {
+            0% {
+                box-shadow: 0 0 4px rgba(59, 130, 246, 0.6), 2.5px 2.5px 0px #115e2e;
+                border-color: #3b82f6;
+            }
+            100% {
+                box-shadow: 0 0 16px rgba(59, 130, 246, 1), 3.5px 3.5px 0px #115e2e, 4px 5px 6px rgba(0,0,0,0.3);
+                border-color: #60a5fa;
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Bloqueada / Oscurecida */
+        .tile-blocked .tile-body {
+            filter: brightness(0.72) contrast(0.92);
+        }
+
+        /* Vibración sutil si intentas pulsar una ficha bloqueada */
+        @keyframes tileShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-3px); }
+            40%, 80% { transform: translateX(3px); }
+        }
+        .shake .tile-body {
+            animation: tileShake 0.18s ease-in-out;
+        }
+
+        /* Animación para eliminación exitosa */
+        @keyframes tileMatch {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.12) translateY(-12px); opacity: 0.8; filter: brightness(1.4); }
+            100% { transform: scale(0.4); opacity: 0; }
+        }
+        .tile-disappearing {
+            animation: tileMatch 0.3s forwards ease-in-out;
+            pointer-events: none;
+            z-index: 9999 !important;
+        }
+
+        /* Contenedor del tablero escalable */
+        #board-wrapper {
+            transition: transform 0.22s ease-out;
+            transform-origin: center center;
+        }
+
+        /* Ocultar barra de scroll en iOS */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen h-[100dvh] w-screen text-slate-100 select-none overflow-hidden">
+
+    <!-- CABECERA DE CONTROL (TOPBAR) -->
+    <header class="h-16 flex items-center justify-between px-4 sm:px-6 bg-[#03140a]/90 border-b border-emerald-950 backdrop-blur-md z-10 shrink-0">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🀄</span>
+            <h1 class="font-serif-elegant text-lg sm:text-xl font-bold tracking-wide bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 bg-clip-text text-transparent">
+                Zen Mahjong
+            </h1>
+        </div>
+
+        <!-- Estadísticas Rápidas -->
+        <div class="flex items-center space-x-3 text-[11px] sm:text-sm font-medium">
+            <div class="bg-[#041a0d] px-2.5 py-1.5 rounded-full border border-emerald-900/40 flex items-center gap-1">
+                <i class="fa-solid fa-layer-group text-amber-400"></i>
+                <span>Fichas: <strong id="lblCount" class="text-amber-300">144</strong></span>
+            </div>
+            <div class="bg-[#041a0d] px-2.5 py-1.5 rounded-full border border-emerald-900/40 flex items-center gap-1">
+                <i class="fa-solid fa-clock text-emerald-400"></i>
+                <span id="txtTimer" class="font-mono text-emerald-300">00:00</span>
+            </div>
+        </div>
+
+        <!-- Botones de Acción Esenciales -->
+        <div class="flex items-center space-x-1.5">
+            <button id="btnSound" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-900/50 active:scale-95 transition-all text-slate-200">
+                <i id="soundIcon" class="fas fa-volume-up"></i>
+            </button>
+            <button id="btnRestart" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-900/50 active:scale-95 transition-all text-slate-200" title="Reiniciar">
+                <i class="fas fa-undo-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ÁREA DE JUEGO CENTRAL (TAPETE) -->
+    <main class="flex-1 relative overflow-hidden felt-table flex items-center justify-center">
+        <!-- El Tablero que escala automáticamente -->
+        <div id="board-container" class="relative w-full h-full flex items-center justify-center p-3">
+            <div id="board-wrapper" class="relative">
+                <!-- Las fichas se generarán dinámicamente aquí dentro -->
+            </div>
+        </div>
+    </main>
+
+    <!-- BARRA DE ACCIÓN INFERIOR -->
+    <footer class="h-20 bg-[#03140a]/90 border-t border-emerald-950 backdrop-blur-md flex items-center justify-around px-2 sm:px-12 z-10 shrink-0 pb-safe">
+        <!-- Deshacer -->
+        <button id="btnUndo" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-emerald-950/50 transition-all text-slate-300 disabled:opacity-40" disabled>
+            <i class="fa-solid fa-rotate-left text-lg"></i>
+            <span class="text-[10px] mt-1 font-medium tracking-wide">Atrás</span>
+        </button>
+
+        <!-- Pista -->
+        <button id="btnHint" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-emerald-950/50 transition-all text-slate-300">
+            <i class="fa-solid fa-wand-magic-sparkles text-lg text-amber-400"></i>
+            <span class="text-[10px] mt-1 font-medium tracking-wide">Pista</span>
+        </button>
+
+        <!-- Mezclar -->
+        <button id="btnShuffle" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-emerald-950/50 transition-all text-slate-300">
+            <i class="fa-solid fa-shuffle text-lg text-emerald-400"></i>
+            <span class="text-[10px] mt-1 font-medium tracking-wide">Mezclar</span>
+        </button>
+
+        <!-- Selector de Diseños -->
+        <button id="btnLayouts" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-emerald-950/50 transition-all text-slate-300">
+            <i class="fa-solid fa-grip text-lg text-blue-400"></i>
+            <span class="text-[10px] mt-1 font-medium tracking-wide">Tableros</span>
+        </button>
+    </footer>
+
+    <!-- MODAL DE SELECCIÓN DE DISEÑOS -->
+    <div id="modalLayouts" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#041c0e] border border-emerald-900 rounded-2xl w-full max-w-md p-6 overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-serif-elegant text-xl font-bold text-amber-200">Seleccionar Tablero</h3>
+                <button id="btnCloseLayouts" class="text-slate-400 hover:text-white text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-3 max-h-72 overflow-y-auto pr-1" id="layoutList">
+                <!-- Rellenado por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE FIN DE JUEGO -->
+    <div id="modalGameOver" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#052613] border-2 border-amber-500/20 rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl">
+            <div class="text-5xl mb-4" id="gameOverIcon">🎉</div>
+            <h3 class="font-serif-elegant text-2xl font-bold text-amber-300 mb-2" id="gameOverTitle">¡Completado!</h3>
+            <p class="text-sm text-slate-300 mb-6" id="gameOverMsg">Has despejado todas las fichas con éxito.</p>
+            
+            <div class="bg-black/20 rounded-xl p-4 mb-6 grid grid-cols-2 gap-2 text-xs">
+                <div class="text-left text-slate-400">Tiempo empleado:</div>
+                <div class="text-right font-mono text-emerald-300 font-bold" id="finalTime">--:--</div>
+                <div class="text-left text-slate-400">Puntuación final:</div>
+                <div class="text-right text-amber-300 font-bold" id="finalScore">0000</div>
+            </div>
+
+            <div class="space-y-3">
+                <button id="btnPlayAgain" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold rounded-xl transition-all shadow-lg active:scale-95">
+                    Jugar de Nuevo
+                </button>
+                <button id="btnShare" class="w-full py-2.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-850 text-slate-200 font-medium text-sm rounded-xl transition-all">
+                    <i class="fa-solid fa-share-nodes mr-2"></i> Compartir Récord
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICACIONES -->
+    <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-4 py-2 rounded-full font-bold text-xs tracking-wider uppercase shadow-lg transition-all opacity-0 pointer-events-none z-50">
+        MENSAJE
+    </div>
+
+    <script>
+        // --- SINTETIZADOR DE AUDIO WEB AUDIO API ---
+        const SoundFX = {
+            enabled: true,
+            ctx: null,
+
+            init() {
+                try {
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                } catch(e) {
+                    console.warn("Web Audio no soportado.");
+                }
+            },
+
+            playClick() {
+                if (!this.enabled || !this.ctx) return;
+                this.resume();
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+
+                gain.gain.setValueAtTime(0.7, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            },
+
+            playMatch() {
+                if (!this.enabled || !this.ctx) return;
+                this.resume();
+
+                const now = this.ctx.currentTime;
+                const freqs = [523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + (i * 0.04));
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.12, now + (i * 0.04) + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.04) + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                });
+            },
+
+            playShuffle() {
+                if (!this.enabled || !this.ctx) return;
+                this.resume();
+                
+                const now = this.ctx.currentTime;
+                for(let i=0; i<3; i++) {
+                    setTimeout(() => this.playClick(), i * 70);
+                }
+            },
+
+            resume() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+        };
+
+        // --- DEFINICIÓN DE FICHA PREMIUM ---
+        const TILE_DEFS = [
+            // Círculos (Dots 1 al 9)
+            { id: "D1", suit: "Dots", value: 1 },
+            { id: "D2", suit: "Dots", value: 2 },
+            { id: "D3", suit: "Dots", value: 3 },
+            { id: "D4", suit: "Dots", value: 4 },
+            { id: "D5", suit: "Dots", value: 5 },
+            { id: "D6", suit: "Dots", value: 6 },
+            { id: "D7", suit: "Dots", value: 7 },
+            { id: "D8", suit: "Dots", value: 8 },
+            { id: "D9", suit: "Dots", value: 9 },
+
+            // Bambúes (Bamboos 1 al 9)
+            { id: "B1", suit: "Bamboos", value: 1 },
+            { id: "B2", suit: "Bamboos", value: 2 },
+            { id: "B3", suit: "Bamboos", value: 3 },
+            { id: "B4", suit: "Bamboos", value: 4 },
+            { id: "B5", suit: "Bamboos", value: 5 },
+            { id: "B6", suit: "Bamboos", value: 6 },
+            { id: "B7", suit: "Bamboos", value: 7 },
+            { id: "B8", suit: "Bamboos", value: 8 },
+            { id: "B9", suit: "Bamboos", value: 9 },
+
+            // Caracteres (Characters 1 al 9)
+            { id: "C1", suit: "Characters", value: 1 },
+            { id: "C2", suit: "Characters", value: 2 },
+            { id: "C3", suit: "Characters", value: 3 },
+            { id: "C4", suit: "Characters", value: 4 },
+            { id: "C5", suit: "Characters", value: 5 },
+            { id: "C6", suit: "Characters", value: 6 },
+            { id: "C7", suit: "Characters", value: 7 },
+            { id: "C8", suit: "Characters", value: 8 },
+            { id: "C9", suit: "Characters", value: 9 },
+
+            // Vientos
+            { id: "WE", suit: "Winds", value: "E", symbol: "東", label: "Este" },
+            { id: "WS", suit: "Winds", value: "S", symbol: "南", label: "Sur" },
+            { id: "WW", suit: "Winds", value: "W", symbol: "西", label: "Oeste" },
+            { id: "WN", suit: "Winds", value: "N", symbol: "北", label: "Norte" },
+
+            // Dragones
+            { id: "DR", suit: "Dragons", value: "Red", symbol: "中", color: "#dc2626", label: "Rojo" },
+            { id: "DG", suit: "Dragons", value: "Green", symbol: "發", color: "#16a34a", label: "Verde" },
+            { id: "DW", suit: "Dragons", value: "White", symbol: "⬜", color: "#2563eb", label: "Blanco" }
+        ];
+
+        // --- DISEÑOS DE TABLERO (LAYOUTS) ---
+        const LAYOUTS = {
+            "tortuga": {
+                name: "La Tortuga (Clásico)",
+                desc: "144 fichas estructuradas en el patrón zen clásico.",
+                getPositions() {
+                    const positions = [];
+                    // Capa 0 (Base)
+                    for (let r = 1; r <= 6; r++) {
+                        for (let c = 2; c <= 11; c++) {
+                            if ((r === 1 || r === 6) && (c === 2 || c === 11)) continue;
+                            positions.push([c, r, 0]);
+                        }
+                    }
+                    // Extremos icónicos
+                    positions.push([1, 3.5, 0]);
+                    positions.push([12, 3.5, 0]);
+                    positions.push([13, 3.5, 0]); // Ficha de cola
+
+                    // Capa 1
+                    for (let r = 2; r <= 5; r++) {
+                        for (let c = 4; c <= 9; c++) {
+                            positions.push([c, r, 1]);
+                        }
+                    }
+
+                    // Capa 2
+                    for (let r = 2.5; r <= 4.5; r += 1) {
+                        for (let c = 5; c <= 8; c++) {
+                            positions.push([c, r, 2]);
+                        }
+                    }
+
+                    // Capa 3
+                    positions.push([6, 3, 3]);
+                    positions.push([7, 3, 3]);
+                    positions.push([6, 4, 3]);
+                    positions.push([7, 4, 3]);
+
+                    // Capa 4 (Corona)
+                    positions.push([6.5, 3.5, 4]);
+
+                    // Asegurar exactamente 144
+                    while (positions.length < 144) {
+                        positions.push([2, 1, 0]);
+                        positions.push([11, 1, 0]);
+                        positions.push([2, 6, 0]);
+                        positions.push([11, 6, 0]);
+                    }
+                    return positions.slice(0, 144);
+                }
+            },
+            "arena": {
+                name: "La Arena",
+                desc: "Una gran pirámide con un coliseo central vacío.",
+                getPositions() {
+                    const positions = [];
+                    for (let layer = 0; layer < 4; layer++) {
+                        const margin = layer;
+                        for (let c = margin; c < 14 - margin; c++) {
+                            positions.push([c + 0.5, margin, layer]);
+                            positions.push([c + 0.5, 7 - margin, layer]);
+                        }
+                        for (let r = margin + 1; r < 7 - margin; r++) {
+                            positions.push([margin + 0.5, r, layer]);
+                            positions.push([13.5 - margin, r, layer]);
+                        }
+                    }
+                    while (positions.length % 2 !== 0 || positions.length < 80) {
+                        positions.push([6.5, 3.5, 0]);
+                        positions.push([7.5, 3.5, 0]);
+                    }
+                    return positions;
+                }
+            },
+            "mariposa": {
+                name: "La Mariposa",
+                desc: "Dos grandes alas simétricas unidas en el centro.",
+                getPositions() {
+                    const positions = [];
+                    for (let z = 0; z < 3; z++) {
+                        const limit = 4 - z;
+                        for (let r = 1; r <= 6; r++) {
+                            for (let c = 1; c <= limit; c++) {
+                                positions.push([c, r, z]);
+                                positions.push([13 - c, r, z]);
+                            }
+                        }
+                    }
+                    positions.push([6.5, 2, 0]);
+                    positions.push([6.5, 3, 1]);
+                    positions.push([6.5, 4, 1]);
+                    positions.push([6.5, 5, 0]);
+                    if (positions.length % 2 !== 0) {
+                        positions.push([6.5, 1, 0]);
+                    }
+                    return positions;
+                }
+            }
+        };
+
+        const hanziNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+
+        // --- ESTADO GENERAL ---
+        const GameState = {
+            layoutName: "tortuga",
+            tiles: [],
+            selectedTile: null,
+            score: 0,
+            startTime: null,
+            timerInterval: null,
+            history: [],
+
+            init(layoutName = "tortuga") {
+                this.layoutName = layoutName;
+                this.selectedTile = null;
+                this.history = [];
+                this.score = 0;
+                document.getElementById('btnUndo').disabled = true;
+
+                const positions = LAYOUTS[this.layoutName].getPositions();
+                const totalTilesCount = positions.length;
+
+                const uniqueTypes = TILE_DEFS.length;
+                const pool = [];
+                
+                const setsNeeded = Math.ceil(totalTilesCount / 4);
+                for (let i = 0; i < setsNeeded; i++) {
+                    const tileDef = TILE_DEFS[i % uniqueTypes];
+                    for (let j = 0; j < 4; j++) {
+                        pool.push(tileDef);
+                    }
+                }
+                
+                this.shuffleArray(pool);
+
+                this.tiles = positions.map((pos, idx) => {
+                    return {
+                        id: `tile-${idx}`,
+                        x: pos[0],
+                        y: pos[1],
+                        z: pos[2],
+                        def: pool[idx],
+                        removed: false
+                    };
+                });
+
+                this.startTime = Date.now();
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+                this.updateCountUI();
+            },
+
+            shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+            },
+
+            updateTimer() {
+                const diff = Date.now() - this.startTime;
+                const secs = Math.floor(diff / 1000) % 60;
+                const mins = Math.floor(diff / 60000);
+                document.getElementById('txtTimer').textContent = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            isTileFree(tile) {
+                if (tile.removed) return false;
+
+                // Bloqueo de Capa Superior
+                const overlapZ = this.tiles.some(other => {
+                    if (other.removed || other.id === tile.id) return false;
+                    if (other.z !== tile.z + 1) return false;
+                    return Math.abs(other.x - tile.x) < 1 && Math.abs(other.y - tile.y) < 1;
+                });
+                if (overlapZ) return false;
+
+                // Bloqueos Laterales en misma capa Z
+                const blockedLeft = this.tiles.some(other => {
+                    if (other.removed || other.id === tile.id || other.z !== tile.z) return false;
+                    const sameY = Math.abs(other.y - tile.y) < 1;
+                    const isLeft = (tile.x - other.x) >= 0.9 && (tile.x - other.x) <= 1.1;
+                    return sameY && isLeft;
+                });
+
+                const blockedRight = this.tiles.some(other => {
+                    if (other.removed || other.id === tile.id || other.z !== tile.z) return false;
+                    const sameY = Math.abs(other.y - tile.y) < 1;
+                    const isRight = (other.x - tile.x) >= 0.9 && (other.x - tile.x) <= 1.1;
+                    return sameY && isRight;
+                });
+
+                return !blockedLeft || !blockedRight;
+            },
+
+            select(tile) {
+                if (!this.isTileFree(tile)) {
+                    const el = document.getElementById(tile.id);
+                    if (el) {
+                        el.classList.add('shake');
+                        setTimeout(() => el.classList.remove('shake'), 200);
+                    }
+                    return;
+                }
+
+                SoundFX.playClick();
+
+                if (this.selectedTile === null) {
+                    this.selectedTile = tile;
+                    this.renderBoard();
+                } else if (this.selectedTile.id === tile.id) {
+                    this.selectedTile = null;
+                    this.renderBoard();
+                } else {
+                    if (this.selectedTile.def.id === tile.def.id) {
+                        this.matchTiles(this.selectedTile, tile);
+                    } else {
+                        this.selectedTile = tile;
+                        this.renderBoard();
+                    }
+                }
+            },
+
+            matchTiles(tileA, tileB) {
+                this.history.push([tileA.id, tileB.id]);
+                document.getElementById('btnUndo').disabled = false;
+
+                tileA.removed = true;
+                tileB.removed = true;
+                this.selectedTile = null;
+                this.score += 150;
+
+                const elA = document.getElementById(tileA.id);
+                const elB = document.getElementById(tileB.id);
+                if (elA) elA.classList.add('tile-disappearing');
+                if (elB) elB.classList.add('tile-disappearing');
+
+                SoundFX.playMatch();
+
+                setTimeout(() => {
+                    this.renderBoard();
+                    this.updateCountUI();
+                    this.checkGameStatus();
+                }, 280);
+            },
+
+            undo() {
+                if (this.history.length === 0) return;
+                const lastPair = this.history.pop();
+                
+                const tileA = this.tiles.find(t => t.id === lastPair[0]);
+                const tileB = this.tiles.find(t => t.id === lastPair[1]);
+
+                if (tileA && tileB) {
+                    tileA.removed = false;
+                    tileB.removed = false;
+                    this.score = Math.max(0, this.score - 150);
+                    SoundFX.playClick();
+                    this.renderBoard();
+                    this.updateCountUI();
+                }
+
+                if (this.history.length === 0) {
+                    document.getElementById('btnUndo').disabled = true;
+                }
+            },
+
+            shuffle() {
+                const activeTiles = this.tiles.filter(t => !t.removed);
+                if (activeTiles.length === 0) return;
+
+                const defs = activeTiles.map(t => t.def);
+                this.shuffleArray(defs);
+
+                activeTiles.forEach((tile, i) => {
+                    tile.def = defs[i];
+                });
+
+                this.selectedTile = null;
+                SoundFX.playShuffle();
+                showToast("¡Tablero Mezclado!");
+                this.renderBoard();
+            },
+
+            showHint() {
+                document.querySelectorAll('.tile-hint').forEach(el => el.classList.remove('tile-hint'));
+
+                const freeTiles = this.tiles.filter(t => this.isTileFree(t));
+                for (let i = 0; i < freeTiles.length; i++) {
+                    for (let j = i + 1; j < freeTiles.length; j++) {
+                        if (freeTiles[i].def.id === freeTiles[j].def.id) {
+                            const elA = document.getElementById(freeTiles[i].id);
+                            const elB = document.getElementById(freeTiles[j].id);
+                            if (elA && elB) {
+                                elA.classList.add('tile-hint');
+                                elB.classList.add('tile-hint');
+                                showToast("Pareja sugerida iluminada");
+                                return;
+                            }
+                        }
+                    }
+                }
+                showToast("¡No quedan parejas! Usa mezclar.");
+            },
+
+            updateCountUI() {
+                const remaining = this.tiles.filter(t => !t.removed).length;
+                document.getElementById('lblCount').textContent = remaining;
+            },
+
+            checkGameStatus() {
+                const remaining = this.tiles.filter(t => !t.removed).length;
+                if (remaining === 0) {
+                    clearInterval(this.timerInterval);
+                    showGameOverModal(true);
+                } else {
+                    if (!this.hasAvailableMoves()) {
+                        showToast("Sin movimientos. ¡Pulsa Mezclar!");
+                    }
+                }
+            },
+
+            hasAvailableMoves() {
+                const freeTiles = this.tiles.filter(t => this.isTileFree(t));
+                for (let i = 0; i < freeTiles.length; i++) {
+                    for (let j = i + 1; j < freeTiles.length; j++) {
+                        if (freeTiles[i].def.id === freeTiles[j].def.id) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
+
+            // --- DISEÑOS VECTORIALES DE ALTA FIDELIDAD ---
+            getTileGraphicsHTML(data) {
+                if (!data) return '';
+
+                // 1. Círculos (Dots)
+                if (data.suit === "Dots") {
+                    if (data.value === 1) {
+                        // Mandala Gigante del 1 de Círculos
+                        return `
+                            <div class="w-full h-full flex items-center justify-center relative p-0.5">
+                                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-xs">
+                                    <circle cx="50" cy="50" r="42" fill="#1e3a8a" stroke="#2563eb" stroke-width="1.5" />
+                                    <circle cx="50" cy="50" r="37" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2, 1.5" />
+                                    <circle cx="50" cy="50" r="33" fill="#dc2626" />
+                                    <path d="M 50 15 L 50 85 M 15 50 L 85 50 M 25 25 L 75 75 M 25 75 L 75 25" stroke="#ffffff" stroke-width="0.8" stroke-dasharray="1.5, 1.5" />
+                                    <circle cx="50" cy="50" r="22" fill="#16a34a" />
+                                    <circle cx="50" cy="50" r="12" fill="#fbbf24" stroke="#d97706" stroke-width="1" />
+                                    <circle cx="50" cy="50" r="5" fill="#dc2626" />
+                                </svg>
+                            </div>
+                        `;
+                    }
+                    
+                    // Rosetas detalladas agrupadas para 2 a 9 de círculos
+                    let dotsSvg = '';
+                    const dotPositions = {
+                        2: [[50,26], [50,74]],
+                        3: [[26,26], [50,50], [74,74]],
+                        4: [[28,28], [72,28], [28,72], [72,72]],
+                        5: [[26,26], [74,26], [50,50], [26,74], [74,74]],
+                        6: [[30,24], [70,24], [30,50], [70,50], [30,76], [70,76]],
+                        7: [[30,22], [70,22], [30,44], [50,52], [70,44], [30,78], [70,78]],
+                        8: [[30,19], [70,19], [30,39], [70,39], [30,59], [70,59], [30,79], [70,79]],
+                        9: [[24,24], [50,24], [76,24], [24,50], [50,50], [76,50], [24,76], [50,76], [76,76]]
+                    };
+                    const dots = dotPositions[data.value] || [];
+                    dots.forEach((pos, idx) => {
+                        const color = (data.value === 7 && idx === 3) || idx % 3 === 0 ? '#dc2626' : (idx % 2 === 0 ? '#16a34a' : '#2563eb');
+                        dotsSvg += `
+                            <g transform="translate(${pos[0]}, ${pos[1]})">
+                                <circle cx="0" cy="0" r="9" fill="${color}" stroke="#ffffff" stroke-width="0.8" />
+                                <circle cx="0" cy="0" r="5" fill="none" stroke="#ffffff" stroke-width="0.4" stroke-dasharray="1, 1" />
+                                <circle cx="0" cy="0" r="2" fill="#fbbf24" />
+                            </g>
+                        `;
+                    });
+                    return `<svg viewBox="0 0 100 100" class="w-10/12 h-10/12">${dotsSvg}</svg>`;
+                }
+
+                // 2. Bambúes (Bamboos)
+                if (data.suit === "Bamboos") {
+                    if (data.value === 1) {
+                        // El Majestuoso Pavo Real Imperial
+                        return `
+                            <div class="w-full h-full flex items-center justify-center relative p-0.5">
+                                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-xs">
+                                    <!-- Rama base -->
+                                    <path d="M 15,82 Q 50,72 85,82" stroke="#a16207" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    <!-- Cola en abanico -->
+                                    <path d="M 50,55 L 20,25 M 50,55 L 32,16 M 50,55 L 50,11 M 50,55 L 68,16 M 50,55 L 80,25" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="20" cy="25" r="4" fill="#2563eb" stroke="#fbbf24" stroke-width="0.8"/>
+                                    <circle cx="32" cy="16" r="4" fill="#dc2626" stroke="#fbbf24" stroke-width="0.8"/>
+                                    <circle cx="50" cy="11" r="4" fill="#2563eb" stroke="#fbbf24" stroke-width="0.8"/>
+                                    <circle cx="68" cy="16" r="4" fill="#dc2626" stroke="#fbbf24" stroke-width="0.8"/>
+                                    <circle cx="80" cy="25" r="4" fill="#16a34a" stroke="#fbbf24" stroke-width="0.8"/>
+                                    <!-- Cuerpo del ave -->
+                                    <path d="M 50,72 C 38,72 38,52 46,44 C 41,38 45,26 50,26 C 55,26 59,38 54,44 C 62,52 62,72 50,72 Z" fill="#1d4ed8" />
+                                    <!-- Alitas doradas -->
+                                    <path d="M 44,50 C 40,54 41,64 45,68 C 46,60 48,54 44,50 Z" fill="#eab308" />
+                                    <path d="M 56,50 C 60,54 59,64 55,68 C 54,60 52,54 56,50 Z" fill="#eab308" />
+                                    <!-- Cabeza y pico -->
+                                    <circle cx="50" cy="29" r="3.5" fill="#1d4ed8"/>
+                                    <polygon points="48,29 52,29 50,34" fill="#fbbf24"/>
+                                </svg>
+                            </div>
+                        `;
+                    }
+
+                    // Cañas talladas con nudos decorativos para 2 a 9 de bambúes
+                    let sticksSvg = '';
+                    const stickPositions = {
+                        2: [[50,28, '#16a34a'], [50,72, '#16a34a']],
+                        3: [[50,26, '#16a34a'], [35,72, '#1d4ed8'], [65,72, '#16a34a']],
+                        4: [[35,28, '#1d4ed8'], [65,28, '#16a34a'], [35,72, '#16a34a'], [65,72, '#1d4ed8']],
+                        5: [[30,26, '#16a34a'], [70,26, '#1d4ed8'], [50,50, '#dc2626'], [30,74, '#16a34a'], [70,74, '#16a34a']],
+                        6: [[30,28, '#16a34a'], [50,28, '#16a34a'], [70,28, '#16a34a'], [30,72, '#1d4ed8'], [50,72, '#16a34a'], [70,72, '#1d4ed8']],
+                        7: [[50,20, '#dc2626'], [25,50, '#16a34a'], [50,50, '#16a34a'], [75,50, '#16a34a'], [25,80, '#1d4ed8'], [50,80, '#16a34a'], [75,80, '#1d4ed8']],
+                        8: [[30,24, '#16a34a'], [50,24, '#16a34a'], [70,24, '#1d4ed8'], [40,50, '#dc2626'], [60,50, '#dc2626'], [30,76, '#16a34a'], [50,76, '#16a34a'], [70,76, '#1d4ed8']],
+                        9: [[25,24, '#16a34a'], [50,24, '#16a34a'], [75,24, '#16a34a'], [25,50, '#1d4ed8'], [50,50, '#dc2626'], [75,50, '#1d4ed8'], [25,76, '#16a34a'], [50,76, '#1d4ed8'], [75,76, '#16a34a']]
+                    };
+                    const sticks = stickPositions[data.value] || [];
+                    sticks.forEach(pos => {
+                        sticksSvg += `
+                            <g transform="translate(${pos[0]-5}, ${pos[1]-11})">
+                                <rect x="2" y="0" width="6" height="8" rx="1.2" fill="${pos[2]}" />
+                                <rect x="2" y="10" width="6" height="8" rx="1.2" fill="${pos[2]}" />
+                                <rect x="1" y="7" width="8" height="3" rx="0.5" fill="#fbbf24" />
+                                <line x1="2" y1="8.5" x2="8" y2="8.5" stroke="#ffffff" stroke-width="0.6" />
+                            </g>
+                        `;
+                    });
+                    return `<svg viewBox="0 0 100 100" class="w-10/12 h-10/12">${sticksSvg}</svg>`;
+                }
+
+                // 3. Caracteres (Characters)
+                if (data.suit === "Characters") {
+                    const charColor = data.value === 9 ? 'text-red-600' : 'text-slate-800';
+                    return `
+                        <div class="flex flex-col items-center justify-center w-full h-full relative">
+                            <span class="absolute top-0.5 left-1 text-[7px] text-slate-400 font-extrabold">${data.value}</span>
+                            <span class="${charColor} font-black font-chinese leading-none text-[20px] -mt-1 drop-shadow-xs">${hanziNums[data.value]}</span>
+                            <span class="text-red-600 font-extrabold font-chinese leading-none text-xs mt-0.5">萬</span>
+                        </div>
+                    `;
+                }
+
+                // 4. Vientos (Winds)
+                if (data.suit === "Winds") {
+                    return `
+                        <div class="flex flex-col items-center justify-center w-full h-full relative">
+                            <span class="absolute top-0.5 left-1 text-[7px] text-blue-500 font-extrabold">${data.value}</span>
+                            <span class="text-slate-900 font-black font-chinese text-[21px] leading-none drop-shadow-xs">${data.symbol}</span>
+                            <span class="text-[5px] uppercase tracking-wider text-slate-400 font-bold mt-1 leading-none">${data.label}</span>
+                        </div>
+                    `;
+                }
+
+                // 5. Dragones (Dragons)
+                if (data.suit === "Dragons") {
+                    if (data.value === "White") {
+                        // Dragón Blanco tradicional
+                        return `
+                            <div class="w-full h-full flex items-center justify-center relative p-1">
+                                <span class="absolute top-0.5 left-1 text-[7px] text-blue-500 font-extrabold">B</span>
+                                <svg viewBox="0 0 100 100" class="w-10/12 h-10/12 drop-shadow-xs">
+                                    <rect x="8" y="10" width="84" height="80" rx="5" fill="none" stroke="#2563eb" stroke-width="6" />
+                                    <rect x="18" y="20" width="64" height="60" rx="2" fill="none" stroke="#1d4ed8" stroke-width="1.2" stroke-dasharray="5,2.5" />
+                                </svg>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div class="flex flex-col items-center justify-center w-full h-full relative">
+                            <span class="absolute top-0.5 left-1 text-[7px] text-slate-400 font-extrabold">${data.value[0]}</span>
+                            <span class="font-black font-chinese text-[23px] mt-0.5 drop-shadow-xs leading-none" style="color: ${data.color}">${data.symbol}</span>
+                            <span class="text-[5px] font-bold mt-1 leading-none" style="color: ${data.color}">${data.label.toUpperCase()}</span>
+                        </div>
+                    `;
+                }
+
+                return '';
+            },
+
+            // --- RENDERIZADO DEL TABLERO ---
+            renderBoard() {
+                const wrapper = document.getElementById('board-wrapper');
+                if (!wrapper) return;
+                wrapper.innerHTML = "";
+
+                const tileWidth = 54;
+                const tileHeight = 68;
+
+                // Encontrar los límites máximos reales de las fichas para centrar perfectamente
+                const activeTiles = this.tiles.filter(t => !t.removed);
+                const maxColVal = activeTiles.length > 0 ? Math.max(...activeTiles.map(t => t.x)) : 13;
+                const maxRowVal = activeTiles.length > 0 ? Math.max(...activeTiles.map(t => t.y)) : 6;
+
+                // Definir dimensiones de la caja envolvente de forma dinámica
+                wrapper.style.width = `${(maxColVal + 1.5) * tileWidth}px`;
+                wrapper.style.height = `${(maxRowVal + 1.5) * tileHeight}px`;
+
+                this.tiles.forEach(tile => {
+                    if (tile.removed) return;
+
+                    const isFree = this.isTileFree(tile);
+                    const isSelected = this.selectedTile && this.selectedTile.id === tile.id;
+
+                    const tileEl = document.createElement('div');
+                    tileEl.id = tile.id;
+                    tileEl.className = `absolute tile-3d ${isFree ? 'tile-playable' : 'tile-blocked'} ${isSelected ? 'tile-selected' : ''}`;
+                    
+                    const xOffset = tile.x * tileWidth - (tile.z * 3.5);
+                    const yOffset = tile.y * tileHeight - (tile.z * 4.5);
+                    
+                    tileEl.style.width = `${tileWidth}px`;
+                    tileEl.style.height = `${tileHeight}px`;
+                    tileEl.style.left = `${xOffset}px`;
+                    tileEl.style.top = `${yOffset}px`;
+                    tileEl.style.zIndex = `${100 + (tile.z * 50) + (tile.y * 2)}`;
+
+                    tileEl.innerHTML = `
+                        <div class="tile-body relative w-full h-full flex flex-col items-center justify-center p-1">
+                            ${this.getTileGraphicsHTML(tile.def)}
+                            <div class="tile-base-jade"></div>
+                        </div>
+                    `;
+
+                    tileEl.addEventListener('pointerdown', (e) => {
+                        e.preventDefault();
+                        this.select(tile);
+                    });
+
+                    wrapper.appendChild(tileEl);
+                });
+
+                this.autofitLayout();
+            },
+
+            // Escalado dinámico rápido de pantalla de alta seguridad que evita el ResizeObserver en iOS Safari
+            autofitLayout() {
+                const container = document.getElementById('board-container');
+                const wrapper = document.getElementById('board-wrapper');
+                if (!container || !wrapper) return;
+
+                const header = document.querySelector('header');
+                const footer = document.querySelector('footer');
+                const headerHeight = header ? header.offsetHeight : 64;
+                const footerHeight = footer ? footer.offsetHeight : 80;
+
+                // Espacio real de visualización disponible restando los paneles fijos
+                const maxVisibleWidth = window.innerWidth - 24; // 24px de margen preventivo
+                const maxVisibleHeight = window.innerHeight - headerHeight - footerHeight - 24;
+
+                const wWidth = wrapper.clientWidth || 810;
+                const wHeight = wrapper.clientHeight || 544;
+
+                const scaleX = maxVisibleWidth / wWidth;
+                const scaleY = maxVisibleHeight / wHeight;
+                let scale = Math.min(scaleX, scaleY) * 0.98; // Ajustar con excelente aprovechamiento de pantalla
+
+                // Prevenir escalado gigantesco o colapso a 0
+                if (scale > 1.25) scale = 1.25;
+                if (scale < 0.15) scale = 0.15;
+
+                wrapper.style.transform = `scale(${scale})`;
+            }
+        };
+
+        // --- SISTEMAS DE INTERFAZ ---
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.remove('opacity-0', 'pointer-events-none');
+            t.classList.add('opacity-100');
+            setTimeout(() => {
+                t.classList.remove('opacity-100');
+                t.classList.add('opacity-0', 'pointer-events-none');
+            }, 1800);
+        }
+
+        const layoutModal = document.getElementById('modalLayouts');
+        
+        document.getElementById('btnLayouts').addEventListener('click', () => {
+            renderLayoutList();
+            layoutModal.classList.remove('hidden');
+        });
+
+        document.getElementById('btnCloseLayouts').addEventListener('click', () => {
+            layoutModal.classList.add('hidden');
+        });
+
+        function renderLayoutList() {
+            const container = document.getElementById('layoutList');
+            container.innerHTML = "";
+            
+            Object.keys(LAYOUTS).forEach(key => {
+                const layout = LAYOUTS[key];
+                const activeClass = GameState.layoutName === key ? 'border-amber-400 bg-emerald-950/60' : 'border-emerald-900 bg-[#03160a]';
+                
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border ${activeClass} flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all`;
+                item.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-amber-200 text-sm">${layout.name}</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">${layout.desc}</p>
+                    </div>
+                    ${GameState.layoutName === key ? '<i class="fa-solid fa-circle-check text-amber-400"></i>' : ''}
+                `;
+                item.addEventListener('click', () => {
+                    layoutModal.classList.add('hidden');
+                    GameState.init(key);
+                    GameState.renderBoard();
+                });
+                container.appendChild(item);
+            });
+        }
+
+        function showGameOverModal(isWin) {
+            const modal = document.getElementById('modalGameOver');
+            const title = document.getElementById('gameOverTitle');
+            const icon = document.getElementById('gameOverIcon');
+            const msg = document.getElementById('gameOverMsg');
+            const finalTime = document.getElementById('finalTime');
+            const finalScore = document.getElementById('finalScore');
+
+            if (isWin) {
+                icon.textContent = "🏆";
+                title.textContent = "¡Zen Alcanzado!";
+                msg.textContent = "Has despejado tu mente y todo el tablero con éxito.";
+                finalScore.textContent = `${GameState.score} Pts`;
+                finalTime.textContent = document.getElementById('txtTimer').textContent;
+            } else {
+                icon.textContent = "🍁";
+                title.textContent = "Sin Salidas";
+                msg.textContent = "No quedan combinaciones viables en este tablero.";
+                finalScore.textContent = `${GameState.score} Pts`;
+                finalTime.textContent = document.getElementById('txtTimer').textContent;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // --- ENTRADA AL DOM ---
+        window.onload = () => {
+            SoundFX.init();
+            GameState.init("tortuga");
+            GameState.renderBoard();
+
+            // Desbloqueo inicial del AudioContext de Apple al primer toque de pantalla
+            document.body.addEventListener('pointerdown', () => {
+                SoundFX.resume();
+            }, { once: true });
+
+            // Capturar tanto cambio de tamaño de ventana como rotación de pantalla móvil
+            window.addEventListener('resize', () => {
+                GameState.autofitLayout();
+            });
+            
+            window.addEventListener('orientationchange', () => {
+                // Pequeño retardo en iOS para que Safari recalcule los tamaños internos de ventana de forma correcta
+                setTimeout(() => {
+                    GameState.autofitLayout();
+                }, 250);
+            });
+
+            document.getElementById('btnUndo').addEventListener('click', () => GameState.undo());
+            document.getElementById('btnHint').addEventListener('click', () => GameState.showHint());
+            document.getElementById('btnShuffle').addEventListener('click', () => GameState.shuffle());
+            
+            document.getElementById('btnRestart').addEventListener('click', () => {
+                GameState.init(GameState.layoutName);
+                GameState.renderBoard();
+                showToast("Partida Reiniciada");
+            });
+
+            // Control manual de volumen
+            const btnSound = document.getElementById('btnSound');
+            const soundIcon = document.getElementById('soundIcon');
+            btnSound.addEventListener('click', () => {
+                SoundFX.enabled = !SoundFX.enabled;
+                if (SoundFX.enabled) {
+                    soundIcon.className = "fas fa-volume-up";
+                    btnSound.classList.remove('opacity-50');
+                    SoundFX.playClick();
+                } else {
+                    soundIcon.className = "fas fa-volume-mute";
+                    btnSound.classList.add('opacity-50');
+                }
+            });
+
+            document.getElementById('btnPlayAgain').addEventListener('click', () => {
+                document.getElementById('modalGameOver').classList.add('hidden');
+                GameState.init(GameState.layoutName);
+                GameState.renderBoard();
+            });
+
+            // Compartir / Copiar marcador al portapapeles
+            document.getElementById('btnShare').addEventListener('click', () => {
+                const score = GameState.score;
+                const time = document.getElementById('txtTimer').textContent;
+                const text = `🀄 ¡He completado Mahjong Zen Premium!\nPuntos: ${score}\nTiempo: ${time}\nSin publicidad ni cortes molestos.`;
+                
+                const tempInput = document.createElement('textarea');
+                tempInput.value = text;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showToast("¡Resultado copiado!");
+                } catch (err) {
+                    console.error("Error al copiar");
+                }
+                document.body.removeChild(tempInput);
+            });
+        };
+    </script>
+</body>
+</html>
