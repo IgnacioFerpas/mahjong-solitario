@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mahjong Zen Clásico - Edición Móvil Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght=0,600;0,700;1,600&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background-color: #020a05;
+            touch-action: none;
+        }
+        .font-serif-elegant {
+            font-family: 'Playfair Display', serif;
+        }
+        .font-chinese {
+            font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+        }
+        .game-felt-bg {
+            background: radial-gradient(circle at center, #0e4422 0%, #062411 60%, #010c05 100%);
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.95);
+            position: relative;
+        }
+        .board-container {
+            perspective: 1500px;
+            -webkit-perspective: 1500px;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            touch-action: none;
+        }
+        
+        .mahjong-tile {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.15s ease;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            border-radius: 6px;
+            -webkit-tap-highlight-color: transparent;
+            will-change: transform;
+        }
+        
+        .tile-body {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #fefcf7 30%, #f6ebd0 90%, #eedeb5 100%);
+            border-radius: 6px;
+            border: 1px solid rgba(212, 196, 161, 0.85);
+            box-shadow: 
+                0.5px 0.5px 0px #ebdcb7,
+                1px 1.2px 0px #e1cd9f,
+                1.5px 2px 0px #d4bc88,
+                2px 2.8px 0px #caa165,
+                2.5px 3.5px 0px #0e5e2e,
+                3px 4.2px 0px #0b4c25,
+                3.5px 5px 0px #073a1b,
+                4px 5.8px 0px #052a13,
+                4.5px 6.5px 0px #021a0b,
+                var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) rgba(0,0,0,0.65);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 3px;
+        }
+
+        .mahjong-tile:active {
+            transform: translate3d(var(--tx-shift), var(--ty-shift), calc(var(--tz) + 14px)) scale(1.06) !important;
+        }
+
+        .mahjong-tile.selected .tile-body {
+            background: linear-gradient(135deg, #fffff5 0%, #fef5d1 50%, #fde68a 100%) !important;
+            border: 1.2px solid #eab308 !important;
+            box-shadow: 
+                0.5px 0.5px 0px #fbbf24,
+                1px 1.2px 0px #d97706,
+                1.5px 2px 0px #b45309,
+                2px 2.8px 0px #78350f,
+                2.5px 3.5px 0px #0e5e2e,
+                3px 4.2px 0px #0b4c25,
+                3.5px 5px 0px #073a1b,
+                0px 0px 22px rgba(234, 179, 8, 0.95) !important;
+        }
+
+        @keyframes hint-pulse {
+            0%, 100% { box-shadow: 0px 0px 14px 4px rgba(14, 165, 233, 0.75), 2.5px 3.5px 0px #0e5e2e; }
+            50% { box-shadow: 0px 0px 26px 10px rgba(14, 165, 233, 0.95), 2.5px 3.5px 0px #0e5e2e; }
+        }
+        .mahjong-tile.hinted .tile-body {
+            animation: hint-pulse 0.65s infinite;
+            border: 1.2px solid #0ea5e9 !important;
+        }
+
+        @keyframes tile-vibrate {
+            0%, 100% { transform: translate3d(var(--tx-shift), var(--ty-shift), var(--tz)) scale(var(--tscale)); }
+            20%, 60% { transform: translate3d(calc(var(--tx-shift) - 4px), var(--ty-shift), var(--tz)) scale(var(--tscale)); }
+            40%, 80% { transform: translate3d(calc(var(--tx-shift) + 4px), var(--ty-shift), var(--tz)) scale(var(--tscale)); }
+        }
+        .mahjong-tile.shake-active {
+            animation: tile-vibrate 0.2s ease-in-out both;
+        }
+
+        @keyframes tile-match-fly {
+            0% {
+                opacity: 1;
+                transform: translate3d(var(--tx-shift), var(--ty-shift), var(--tz)) scale(var(--tscale));
+            }
+            100% {
+                opacity: 0;
+                transform: translate3d(var(--tx-shift), calc(var(--ty-shift) - 60px), calc(var(--tz) + 50px)) scale(1.25);
+                filter: brightness(1.5) blur(1px);
+            }
+        }
+        .mahjong-tile.matched {
+            animation: tile-match-fly 0.38s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            pointer-events: none;
+            z-index: 9999 !important;
+        }
+
+        #particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2000;
+        }
+
+        .btn-interactive {
+            transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-interactive:active {
+            transform: scale(0.92);
+        }
+    </style>
+</head>
+<body class="game-felt-bg text-white min-h-screen flex flex-col justify-between select-none">
+
+    <canvas id="particleCanvas"></canvas>
+
+    <header class="w-full bg-black/60 backdrop-blur-md border-b border-emerald-950/50 px-3 py-2 z-50 safe-top">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-800 rounded-lg flex items-center justify-center shadow-inner border border-emerald-500/20">
+                    <span class="text-base">🀄</span>
+                </div>
+                <div class="leading-none">
+                    <h1 class="text-xs sm:text-sm font-extrabold tracking-wide font-serif-elegant bg-gradient-to-r from-amber-100 via-emerald-300 to-teal-50 bg-clip-text text-transparent">
+                        Mahjong Solitario
+                    </h1>
+                    <p class="text-[8px] text-emerald-400/80 font-semibold tracking-wider">ESTILO SHANGHÁI • PREMIUM</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <div class="relative">
+                    <select id="themeSelect" class="bg-emerald-950/90 border border-emerald-800/50 rounded-md pl-1.5 pr-5 py-0.5 text-[10px] font-bold text-emerald-200 focus:outline-none cursor-pointer appearance-none">
+                        <option value="traditional">🀄 Tradicional Pro</option>
+                        <option value="modern">🎨 Emojis</option>
+                        <option value="numbers">🔢 Sencillo</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[8px] text-emerald-400 pointer-events-none"></i>
+                </div>
+
+                <div class="relative">
+                    <select id="layoutSelect" class="bg-emerald-950/90 border border-emerald-800/50 rounded-md pl-1.5 pr-5 py-0.5 text-[10px] font-bold text-emerald-200 focus:outline-none cursor-pointer appearance-none">
+                        <option value="turtle">🐢 Tortuga (144)</option>
+                        <option value="pyramid">🔺 Pirámide (100)</option>
+                        <option value="temple">⛩️ Templo (144)</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[8px] text-emerald-400 pointer-events-none"></i>
+                </div>
+
+                <button id="btnSound" class="w-7 h-7 bg-emerald-950/90 hover:bg-emerald-900/90 border border-emerald-800/50 rounded-md text-[10px] text-emerald-200 flex items-center justify-center btn-interactive" title="Sonido">
+                    <i class="fas fa-volume-up" id="soundIcon"></i>
+                </button>
+                <button id="btnRules" class="w-7 h-7 bg-emerald-950/90 hover:bg-emerald-900/90 border border-emerald-800/50 rounded-md text-[10px] text-emerald-200 flex items-center justify-center btn-interactive">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section id="statsSection" class="w-full max-w-lg mx-auto px-3 mt-1.5 grid grid-cols-4 gap-1.5 z-40">
+        <div class="bg-black/40 backdrop-blur-sm border border-emerald-500/10 rounded-lg py-0.5 px-1.5 text-center shadow-lg">
+            <span class="text-[7px] uppercase tracking-wider text-emerald-400 block font-bold">Tiempo</span>
+            <span id="txtTimer" class="text-xs sm:text-sm font-extrabold text-emerald-100 font-mono">00:00</span>
+        </div>
+        <div class="bg-black/40 backdrop-blur-sm border border-emerald-500/10 rounded-lg py-0.5 px-1.5 text-center shadow-lg">
+            <span class="text-[7px] uppercase tracking-wider text-emerald-400 block font-bold">Puntos</span>
+            <span id="txtScore" class="text-xs sm:text-sm font-extrabold text-amber-300">0</span>
+        </div>
+        <div class="bg-black/40 backdrop-blur-sm border border-emerald-500/10 rounded-lg py-0.5 px-1.5 text-center shadow-lg">
+            <span class="text-[7px] uppercase tracking-wider text-emerald-400 block font-bold">Fichas</span>
+            <span id="txtTilesLeft" class="text-xs sm:text-sm font-extrabold text-teal-300">144</span>
+        </div>
+        <div class="bg-black/40 backdrop-blur-sm border border-emerald-500/10 rounded-lg py-0.5 px-1.5 text-center shadow-lg">
+            <span class="text-[7px] uppercase tracking-wider text-emerald-400 block font-bold">Parejas</span>
+            <span id="txtMoves" class="text-xs sm:text-sm font-extrabold text-amber-400">...</span>
+        </div>
+    </section>
+
+    <main class="flex-grow relative w-full overflow-hidden flex items-center justify-center">
+        <div id="loader" class="absolute inset-0 bg-emerald-950/90 backdrop-blur-md flex flex-col items-center justify-center z-50">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-400 mb-2"></div>
+            <p class="text-emerald-300 text-[10px] font-bold tracking-wider">Tallando porcelanas y puliendo jade verde...</p>
+        </div>
+
+        <div class="absolute inset-0 flex items-center justify-center p-2 board-container">
+            <div id="mahjongBoard" class="relative w-[960px] h-[640px] transition-transform duration-300 ease-out origin-center">
+                <!-- Las fichas serán inyectadas dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full bg-black/60 backdrop-blur-md border-t border-emerald-950/50 py-2 px-3 pb-safe z-40">
+        <div class="max-w-md mx-auto flex justify-between items-center gap-2">
+            <button id="btnUndo" class="flex-1 bg-emerald-950/80 hover:bg-emerald-900/70 disabled:opacity-20 border border-emerald-800/40 text-white rounded-lg py-2 flex flex-col items-center gap-0.5 transition-all shadow btn-interactive" disabled>
+                <i class="fas fa-undo text-[11px]"></i>
+                <span class="text-[7px] font-extrabold tracking-wider uppercase">Deshacer</span>
+            </button>
+            
+            <button id="btnHint" class="flex-1 bg-emerald-950/80 hover:bg-emerald-900/70 border border-emerald-800/40 text-white rounded-lg py-2 flex flex-col items-center gap-0.5 transition-all shadow btn-interactive">
+                <i class="fas fa-lightbulb text-[11px] text-amber-400"></i>
+                <span class="text-[7px] font-extrabold tracking-wider uppercase text-amber-200">Pista</span>
+            </button>
+            
+            <button id="btnShuffle" class="flex-1 bg-emerald-950/80 hover:bg-emerald-900/70 border border-emerald-800/40 text-white rounded-lg py-2 flex flex-col items-center gap-0.5 transition-all shadow btn-interactive">
+                <i class="fas fa-random text-[11px] text-emerald-400"></i>
+                <span class="text-[7px] font-extrabold tracking-wider uppercase">Mezclar</span>
+            </button>
+            
+            <button id="btnRestart" class="flex-1 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-900/40 text-rose-100 rounded-lg py-2 flex flex-col items-center gap-0.5 transition-all shadow btn-interactive">
+                <i class="fas fa-redo text-[11px] text-rose-400"></i>
+                <span class="text-[7px] font-extrabold tracking-wider uppercase">Reiniciar</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Modales de juego -->
+    <div id="modalRules" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-emerald-950 border border-emerald-800/60 max-w-xs w-full rounded-xl p-4 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+            <h3 class="text-sm font-bold font-serif-elegant text-emerald-300 mb-2 flex items-center gap-1.5">
+                🀄 Reglas de Mahjong Zen
+            </h3>
+            <div class="space-y-2 text-emerald-100/90 text-[10px] overflow-y-auto max-h-[45vh] pr-1 leading-relaxed">
+                <p>El objetivo es emparejar y retirar todas las fichas de marfil.</p>
+                <p class="font-bold text-white text-[9px] uppercase tracking-wider text-emerald-400">Condición de Ficha Libre:</p>
+                <ul class="list-disc pl-4 space-y-0.5 text-emerald-200/90">
+                    <li>No debe tener ninguna ficha colocada encima.</li>
+                    <li>Debe tener el lado izquierdo o derecho completamente libre.</li>
+                </ul>
+                <p class="text-[9px] text-emerald-400/80 border-t border-emerald-800/40 pt-1.5 font-medium">
+                    💡 <span class="text-white font-bold">Experiencia Tradicional:</span> Siguiendo las reglas de los grandes diarios, las piezas bloqueadas no se oscurecen de antemano. Si intentas tocar una pieza bloqueada, temblará de forma intuitiva indicando su estado.
+                </p>
+            </div>
+            <button id="btnCloseRules" class="mt-3.5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg text-xs transition-all btn-interactive">
+                ¡Entendido! Jugar
+            </button>
+        </div>
+    </div>
+
+    <div id="modalGameOver" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-emerald-950 border border-emerald-800/60 max-w-xs w-full rounded-xl p-4 shadow-2xl text-center">
+            <span class="text-3xl block mb-1">🏆</span>
+            <h3 class="text-base font-bold font-serif-elegant text-amber-400 mb-1" id="gameOverTitle">¡Victoria Zen!</h3>
+            <p class="text-emerald-200 text-[10px] mb-2.5" id="gameOverText">Completado con gran maestría.</p>
+            
+            <div class="bg-black/30 rounded-lg p-2 mb-3.5 grid grid-cols-2 gap-2 text-left border border-emerald-900/40">
+                <div>
+                    <span class="text-[8px] text-emerald-400 block uppercase font-bold">Puntos</span>
+                    <span class="text-sm font-bold text-amber-300" id="finalScore">0</span>
+                </div>
+                <div>
+                    <span class="text-[8px] text-emerald-400 block uppercase font-bold">Tiempo</span>
+                    <span class="text-sm font-bold text-white font-mono" id="finalTime">00:00</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <button id="btnPlayAgain" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg text-xs transition-all shadow btn-interactive">
+                    Jugar de Nuevo
+                </button>
+                <button id="btnShare" class="w-full bg-emerald-900/40 hover:bg-emerald-900 text-emerald-200 font-semibold py-1.5 rounded-lg transition-all text-[10px] border border-emerald-800/40 btn-interactive">
+                    <i class="fas fa-copy mr-1"></i> Copiar Récord
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastMessage" class="fixed bottom-18 left-1/2 transform -translate-x-1/2 bg-amber-500 text-slate-950 px-3.5 py-1.5 rounded-lg text-[10px] font-bold shadow-2xl flex items-center gap-1.5 z-40 transition-all duration-300 translate-y-12 opacity-0 pointer-events-none">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="toastText">Sin movimientos</span>
+    </div>
+
+    <script>
+        const SoundFX = {
+            enabled: true,
+            ctx: null,
+
+            init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn("AudioContext no admitido.");
+                }
+            },
+
+            playClick() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const ctx = this.ctx;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(260, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.05);
+                    
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                } catch(e) {}
+            },
+
+            playBlocked() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const ctx = this.ctx;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(110, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.08);
+                    
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.08);
+                } catch(e) {}
+            },
+
+            playMatch() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const ctx = this.ctx;
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc1.type = 'triangle';
+                    osc1.frequency.setValueAtTime(350, ctx.currentTime);
+                    osc1.frequency.exponentialRampToValueAtTime(130, ctx.currentTime + 0.1);
+
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(700, ctx.currentTime);
+                    osc2.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.07);
+
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc1.start();
+                    osc2.start();
+                    osc1.stop(ctx.currentTime + 0.1);
+                    osc2.stop(ctx.currentTime + 0.1);
+                } catch(e) {}
+            },
+
+            playShuffle() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    let delay = 0;
+                    for (let i = 0; i < 4; i++) {
+                        setTimeout(() => { this.playClick(); }, delay);
+                        delay += 50;
+                    }
+                } catch(e) {}
+            },
+
+            playVictory() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const ctx = this.ctx;
+                    const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+                    notes.forEach((freq, idx) => {
+                        setTimeout(() => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                            osc.frequency.exponentialRampToValueAtTime(freq / 2, ctx.currentTime + 0.35);
+                            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.35);
+                        }, idx * 75);
+                    });
+                } catch(e) {}
+            }
+        };
+
+        const Particles = {
+            canvas: null,
+            ctx: null,
+            list: [],
+
+            init() {
+                this.canvas = document.getElementById('particleCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.loop();
+            },
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+
+            spawn(x, y, color) {
+                for (let i = 0; i < 15; i++) {
+                    this.list.push({
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: (Math.random() - 0.5) * 5 - 2.5,
+                        size: Math.random() * 3.5 + 2,
+                        color: color || '#f59e0b',
+                        alpha: 1,
+                        decay: Math.random() * 0.025 + 0.015
+                    });
+                }
+            },
+
+            loop() {
+                requestAnimationFrame(() => this.loop());
+                if (!this.ctx) return;
+                
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                for (let i = this.list.length - 1; i >= 0; i--) {
+                    const p = this.list[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= p.decay;
+                    
+                    if (p.alpha <= 0) {
+                        this.list.splice(i, 1);
+                        continue;
+                    }
+                    
+                    this.ctx.save();
+                    this.ctx.globalAlpha = p.alpha;
+                    this.ctx.shadowBlur = 8;
+                    this.ctx.shadowColor = p.color;
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.restore();
+                }
+            }
+        };
+
+        const ALL_PAIRS = [];
+
+        for (let v = 1; v <= 9; v++) {
+            ALL_PAIRS.push([{ suit: 'Dots', value: v, isSpecial: false }, { suit: 'Dots', value: v, isSpecial: false }]);
+            ALL_PAIRS.push([{ suit: 'Dots', value: v, isSpecial: false }, { suit: 'Dots', value: v, isSpecial: false }]);
+        }
+
+        for (let v = 1; v <= 9; v++) {
+            ALL_PAIRS.push([{ suit: 'Bamboos', value: v, isSpecial: false }, { suit: 'Bamboos', value: v, isSpecial: false }]);
+            ALL_PAIRS.push([{ suit: 'Bamboos', value: v, isSpecial: false }, { suit: 'Bamboos', value: v, isSpecial: false }]);
+        }
+
+        for (let v = 1; v <= 9; v++) {
+            ALL_PAIRS.push([{ suit: 'Characters', value: v, isSpecial: false }, { suit: 'Characters', value: v, isSpecial: false }]);
+            ALL_PAIRS.push([{ suit: 'Characters', value: v, isSpecial: false }, { suit: 'Characters', value: v, isSpecial: false }]);
+        }
+
+        const windsList = [
+            { val: 'E', symbol: '東', name: 'Este' },
+            { val: 'S', symbol: '南', name: 'Sur' },
+            { val: 'W', symbol: '西', name: 'Oeste' },
+            { val: 'N', symbol: '北', name: 'Norte' }
+        ];
+        windsList.forEach(w => {
+            const item = { suit: 'Winds', value: w.val, symbol: w.symbol, label: w.name, isSpecial: false };
+            ALL_PAIRS.push([item, { ...item }]);
+            ALL_PAIRS.push([{ ...item }, { ...item }]);
+        });
+
+        const dragonsList = [
+            { val: 'Red', symbol: '中', color: '#dc2626', label: 'Rojo' },
+            { val: 'Green', symbol: '發', color: '#16a34a', label: 'Verde' },
+            { val: 'White', symbol: '⬜', color: '#2563eb', label: 'Blanco' }
+        ];
+        dragonsList.forEach(d => {
+            const item = { suit: 'Dragons', value: d.val, symbol: d.symbol, color: d.color, label: d.label, isSpecial: false };
+            ALL_PAIRS.push([item, { ...item }]);
+            ALL_PAIRS.push([{ ...item }, { ...item }]);
+        });
+
+        const flowersList = [
+            { suit: 'Flowers', value: 'Plum', symbol: '🌺', label: 'Ciruelo', isSpecial: true },
+            { suit: 'Flowers', value: 'Orchid', symbol: '🪻', label: 'Orquídea', isSpecial: true },
+            { suit: 'Flowers', value: 'Bamboo', symbol: '🎋', label: 'Bambú', isSpecial: true },
+            { suit: 'Flowers', value: 'Chrys', symbol: '🌼', label: 'Crisantemo', isSpecial: true }
+        ];
+        ALL_PAIRS.push([flowersList[0], flowersList[1]]);
+        ALL_PAIRS.push([flowersList[2], flowersList[3]]);
+
+        const seasonsList = [
+            { suit: 'Seasons', value: 'Spring', symbol: '🌸', label: 'Primavera', isSpecial: true },
+            { suit: 'Seasons', value: 'Summer', symbol: '☀️', label: 'Verano', isSpecial: true },
+            { suit: 'Seasons', value: 'Autumn', symbol: '🍁', label: 'Otoño', isSpecial: true },
+            { suit: 'Seasons', value: 'Winter', symbol: '❄️', label: 'Invierno', isSpecial: true }
+        ];
+        ALL_PAIRS.push([seasonsList[0], seasonsList[1]]);
+        ALL_PAIRS.push([seasonsList[2], seasonsList[3]]);
+
+        const hanziNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+
+        function getTurtleLayout() {
+            const coords = [];
+            for (let x = 4; x <= 22; x += 2) coords.push([x, 2, 0]);
+            for (let x = 2; x <= 24; x += 2) coords.push([x, 4, 0]);
+            for (let x = 2; x <= 24; x += 2) coords.push([x, 6, 0]);
+            coords.push([0, 7, 0]);
+            for (let x = 2; x <= 24; x += 2) coords.push([x, 8, 0]);
+            coords.push([26, 7, 0]);
+            coords.push([28, 7, 0]);
+            for (let x = 2; x <= 24; x += 2) coords.push([x, 10, 0]);
+            for (let x = 2; x <= 24; x += 2) coords.push([x, 12, 0]);
+            for (let x = 4; x <= 22; x += 2) coords.push([x, 14, 0]);
+            coords.push([13, 0, 0]);
+            coords.push([13, 16, 0]);
+
+            for (let y = 4; y <= 12; y += 2) {
+                for (let x = 6; x <= 20; x += 2) {
+                    if ((y === 4 || y === 12) && (x < 8 || x > 18)) continue;
+                    coords.push([x, y, 1]);
+                }
+            }
+            for (let y = 6; y <= 12; y += 2) {
+                for (let x = 10; x <= 16; x += 2) {
+                    coords.push([x, y, 2]);
+                }
+            }
+            coords.push([12, 8, 3]);
+            coords.push([14, 8, 3]);
+            coords.push([12, 10, 3]);
+            coords.push([14, 10, 3]);
+            coords.push([13, 9, 4]);
+
+            return coords;
+        }
+
+        function getPyramidLayout() {
+            const coords = [];
+            for (let y = 2; y <= 16; y += 2) {
+                for (let x = 4; x <= 18; x += 2) {
+                    coords.push([x, y, 0]);
+                }
+            }
+            for (let y = 4; y <= 12; y += 2) {
+                for (let x = 6; x <= 14; x += 2) {
+                    coords.push([x, y, 1]);
+                }
+            }
+            for (let y = 6; y <= 10; y += 2) {
+                for (let x = 8; x <= 12; x += 2) {
+                    coords.push([x, y, 2]);
+                }
+            }
+            coords.push([10, 8, 3]);
+            coords.push([10, 10, 3]);
+            return coords;
+        }
+
+        function getTempleLayout() {
+            const coords = [];
+            for (let y = 2; y <= 14; y += 2) {
+                coords.push([2, y, 0]); coords.push([4, y, 0]);
+                coords.push([2, y, 1]); coords.push([4, y, 1]);
+            }
+            for (let y = 2; y <= 14; y += 2) {
+                coords.push([22, y, 0]); coords.push([24, y, 0]);
+                coords.push([22, y, 1]); coords.push([24, y, 1]);
+            }
+            for (let y = 4; y <= 12; y += 2) {
+                for (let x = 8; x <= 18; x += 2) {
+                    coords.push([x, y, 0]);
+                }
+            }
+            for (let y = 6; y <= 10; y += 2) {
+                for (let x = 10; x <= 16; x += 2) {
+                    coords.push([x, y, 1]);
+                    coords.push([x, y, 2]);
+                }
+            }
+            coords.push([13, 8, 3]);
+            coords.push([13, 10, 3]);
+            return coords;
+        }
+
+        const GameState = {
+            layoutName: 'turtle',
+            tileTheme: 'traditional',
+            activeTiles: [],
+            selectedTile: null,
+            score: 0,
+            timer: 0,
+            timerInterval: null,
+            history: [],
+            gameStarted: false,
+
+            init(layoutName) {
+                this.layoutName = layoutName;
+                this.stopTimer();
+                this.timer = 0;
+                this.score = 0;
+                this.selectedTile = null;
+                this.history = [];
+                this.gameStarted = false;
+
+                let coordsRaw = [];
+                if (layoutName === 'turtle') coordsRaw = getTurtleLayout();
+                else if (layoutName === 'pyramid') coordsRaw = getPyramidLayout();
+                else if (layoutName === 'temple') coordsRaw = getTempleLayout();
+
+                let totalTilesCount = coordsRaw.length;
+                if (totalTilesCount % 2 !== 0) {
+                    coordsRaw.pop();
+                    totalTilesCount = coordsRaw.length;
+                }
+
+                const deck = this.createShuffledDeck(totalTilesCount);
+
+                this.activeTiles = coordsRaw.map((coord, index) => {
+                    return {
+                        id: `tile-${index}`,
+                        x: coord[0],
+                        y: coord[1],
+                        z: coord[2],
+                        tileData: deck[index],
+                        matched: false
+                    };
+                });
+
+                this.updateUIStats();
+                this.startTimer();
+                this.gameStarted = true;
+            },
+
+            createShuffledDeck(size) {
+                const pairsPool = [...ALL_PAIRS];
+                pairsPool.sort(() => Math.random() - 0.5);
+
+                const neededPairs = Math.floor(size / 2);
+                const selection = [];
+
+                for (let i = 0; i < neededPairs; i++) {
+                    const pair = pairsPool[i] || pairsPool[i % pairsPool.length];
+                    selection.push(JSON.parse(JSON.stringify(pair[0])));
+                    selection.push(JSON.parse(JSON.stringify(pair[1])));
+                }
+
+                if (selection.length < size) {
+                    const fallback = pairsPool[0][0];
+                    selection.push(JSON.parse(JSON.stringify(fallback)));
+                }
+
+                selection.sort(() => Math.random() - 0.5);
+                return selection;
+            },
+
+            isMatchPossible(t1, t2) {
+                if (!t1 || !t2) return false;
+                if (t1.suit !== t2.suit) return false;
+                if (t1.isSpecial && t2.isSpecial) return true;
+                return t1.value === t2.value;
+            },
+
+            isTileFree(tile) {
+                if (tile.matched) return false;
+                const tileWidth = 2;
+                const tileHeight = 2;
+
+                let hasTileAbove = false;
+                let hasTileLeft = false;
+                let hasTileRight = false;
+
+                for (let other of this.activeTiles) {
+                    if (other.id === tile.id || other.matched) continue;
+
+                    if (other.z > tile.z) {
+                        if (Math.abs(other.x - tile.x) < tileWidth && Math.abs(other.y - tile.y) < tileHeight) {
+                            hasTileAbove = true;
+                            break;
+                        }
+                    }
+
+                    if (other.z === tile.z) {
+                        const solapaY = Math.abs(other.y - tile.y) < tileHeight;
+                        if (solapaY) {
+                            if (other.x <= tile.x - 2 && other.x > tile.x - 3) {
+                                hasTileLeft = true;
+                            }
+                            if (other.x >= tile.x + 2 && other.x < tile.x + 3) {
+                                hasTileRight = true;
+                            }
+                        }
+                    }
+                }
+                return !hasTileAbove && (!hasTileLeft || !hasTileRight);
+            },
+
+            getFreeTiles() {
+                return this.activeTiles.filter(t => !t.matched && this.isTileFree(t));
+            },
+
+            getAvailablePairs() {
+                const freeTiles = this.getFreeTiles();
+                const pairs = [];
+                for (let i = 0; i < freeTiles.length; i++) {
+                    for (let j = i + 1; j < freeTiles.length; j++) {
+                        const t1 = freeTiles[i];
+                        const t2 = freeTiles[j];
+                        if (this.isMatchPossible(t1.tileData, t2.tileData)) {
+                            pairs.push([t1, t2]);
+                        }
+                    }
+                }
+                return pairs;
+            },
+
+            selectTile(tile) {
+                if (tile.matched) return;
+
+                if (!this.isTileFree(tile)) {
+                    const el = document.getElementById(tile.id);
+                    if (el) {
+                        el.classList.add('shake-active');
+                        SoundFX.playBlocked();
+                        setTimeout(() => el.classList.remove('shake-active'), 200);
+                    }
+                    return;
+                }
+
+                SoundFX.playClick();
+
+                if (this.selectedTile === null) {
+                    this.selectedTile = tile;
+                    this.renderBoard();
+                } else {
+                    if (this.selectedTile.id === tile.id) {
+                        this.selectedTile = null;
+                        this.renderBoard();
+                    } else {
+                        if (this.isMatchPossible(this.selectedTile.tileData, tile.tileData)) {
+                            this.matchTiles(this.selectedTile, tile);
+                        } else {
+                            this.selectedTile = tile;
+                            this.renderBoard();
+                        }
+                    }
+                }
+            },
+
+            matchTiles(t1, t2) {
+                t1.matched = true;
+                t2.matched = true;
+                this.selectedTile = null;
+
+                this.history.push({ t1: t1, t2: t2 });
+                this.score += 100;
+                SoundFX.playMatch();
+
+                const el1 = document.getElementById(t1.id);
+                const el2 = document.getElementById(t2.id);
+                
+                if (el1) {
+                    el1.classList.add('matched');
+                    const rect = el1.getBoundingClientRect();
+                    Particles.spawn(rect.left + rect.width/2, rect.top + rect.height/2, '#f59e0b');
+                }
+                if (el2) {
+                    el2.classList.add('matched');
+                    const rect = el2.getBoundingClientRect();
+                    Particles.spawn(rect.left + rect.width/2, rect.top + rect.height/2, '#10b981');
+                }
+
+                setTimeout(() => {
+                    this.renderBoard();
+                    this.checkGameStatus();
+                }, 350);
+
+                this.updateUIStats();
+            },
+
+            undo() {
+                if (this.history.length === 0) return;
+                const lastMove = this.history.pop();
+                lastMove.t1.matched = false;
+                lastMove.t2.matched = false;
+                this.selectedTile = null;
+                this.score = Math.max(0, this.score - 100);
+
+                SoundFX.playClick();
+                this.renderBoard();
+                this.updateUIStats();
+            },
+
+            shuffle() {
+                const remaining = this.activeTiles.filter(t => !t.matched);
+                if (remaining.length === 0) return;
+
+                showLoader(true);
+                SoundFX.playShuffle();
+
+                setTimeout(() => {
+                    const datas = remaining.map(t => t.tileData);
+                    datas.sort(() => Math.random() - 0.5);
+                    remaining.forEach((tile, index) => {
+                        tile.tileData = datas[index];
+                    });
+
+                    this.selectedTile = null;
+                    showLoader(false);
+                    this.renderBoard();
+                    this.updateUIStats();
+
+                    const pairs = this.getAvailablePairs();
+                    if (pairs.length === 0) {
+                        showToast("¡Tablero sin salidas! Prueba mezclar de nuevo.");
+                    } else {
+                        showToast("¡Fichas mezcladas con éxito!");
+                    }
+                }, 350);
+            },
+
+            showHint() {
+                document.querySelectorAll('.mahjong-tile').forEach(el => el.classList.remove('hinted'));
+                const pairs = this.getAvailablePairs();
+                if (pairs.length === 0) {
+                    showToast("No hay parejas. ¡Dale a Mezclar!");
+                    return;
+                }
+
+                const pairSelected = pairs[Math.floor(Math.random() * pairs.length)];
+                pairSelected.forEach(tile => {
+                    const el = document.getElementById(tile.id);
+                    if (el) el.classList.add('hinted');
+                });
+
+                SoundFX.playClick();
+                setTimeout(() => {
+                    pairSelected.forEach(tile => {
+                        const el = document.getElementById(tile.id);
+                        if (el) el.classList.remove('hinted');
+                    });
+                }, 2000);
+            },
+
+            checkGameStatus() {
+                const remaining = this.activeTiles.filter(t => !t.matched).length;
+                if (remaining === 0) {
+                    this.stopTimer();
+                    SoundFX.playVictory();
+                    showGameOverModal(true, this.score, this.timer);
+                    return;
+                }
+
+                const pairs = this.getAvailablePairs();
+                if (pairs.length === 0) {
+                    showToast("Sin salidas. ¡Mezcla el tablero!");
+                }
+            },
+
+            renderBoard() {
+                const board = document.getElementById('mahjongBoard');
+                if (!board) return;
+                board.innerHTML = '';
+
+                // DETECCIÓN ABSOLUTA EXCLUSIVA PARA EVITAR BUCLES EN SAFARI:
+                // Medimos la ventana real directamente en lugar de contenedores dinámicos
+                const headerH = document.querySelector('header')?.offsetHeight || 50;
+                const footerH = document.querySelector('footer')?.offsetHeight || 60;
+                const statsH = document.getElementById('statsSection')?.offsetHeight || 40;
+                
+                const availableHeight = window.innerHeight - headerH - footerH - statsH - 24; 
+                const availableWidth = window.innerWidth - 16; 
+
+                const logicalW = 960;
+                const logicalH = 640;
+
+                const scaleX = availableWidth / logicalW;
+                const scaleY = availableHeight / logicalH;
+                const scale = Math.min(scaleX, scaleY) * 0.98;
+
+                board.style.transform = `scale(${scale})`;
+
+                const tileW = 54;
+                const tileH = 72;
+
+                this.activeTiles.forEach(tile => {
+                    if (tile.matched) return;
+
+                    const isSelected = this.selectedTile && this.selectedTile.id === tile.id;
+
+                    const tileEl = document.createElement('div');
+                    tileEl.id = tile.id;
+                    tileEl.className = `mahjong-tile ${isSelected ? 'selected' : ''}`;
+                    
+                    const depthX = -3.5 * tile.z;
+                    const depthY = -3.5 * tile.z;
+
+                    const gridX = 28;
+                    const gridY = 34;
+
+                    const posX = (tile.x * gridX) + depthX + 70; 
+                    const posY = (tile.y * gridY) + depthY + 30;
+                    const posZ = tile.z * 5.5;
+
+                    const perspectiveScale = 1 + (tile.z * 0.018);
+
+                    tileEl.style.width = `${tileW}px`;
+                    tileEl.style.height = `${tileH}px`;
+                    tileEl.style.left = `${posX}px`;
+                    tileEl.style.top = `${posY}px`;
+                    
+                    tileEl.style.setProperty('--tz', `${posZ}px`);
+                    tileEl.style.setProperty('--tx-shift', `0px`);
+                    tileEl.style.setProperty('--ty-shift', `0px`);
+                    tileEl.style.setProperty('--tscale', `${perspectiveScale}`);
+
+                    const shadowBlur = 8 + (tile.z * 4.5);
+                    const shadowOffsetX = 3.5 + (tile.z * 1.5);
+                    const shadowOffsetY = 4 + (tile.z * 1.8);
+                    tileEl.style.setProperty('--shadow-blur', `${shadowBlur}px`);
+                    tileEl.style.setProperty('--shadow-offset-x', `${shadowOffsetX}px`);
+                    tileEl.style.setProperty('--shadow-offset-y', `${shadowOffsetY}px`);
+
+                    tileEl.style.transform = `translate3d(0, 0, ${posZ}px) scale(${perspectiveScale})`;
+                    tileEl.style.zIndex = `${1000 + (tile.z * 200) + (tile.y * 10) + tile.x}`;
+
+                    tileEl.innerHTML = `
+                        <div class="tile-body">
+                            ${this.getTileGraphicsHTML(tile.tileData)}
+                        </div>
+                    `;
+
+                    // USAMOS POINTERDOWN: Máxima rapidez táctil y respuesta instantánea en iPhone
+                    tileEl.addEventListener('pointerdown', (e) => {
+                        e.preventDefault();
+                        this.selectTile(tile);
+                    });
+
+                    board.appendChild(tileEl);
+                });
+            },
+
+            getTileGraphicsHTML(data) {
+                if (!data) return '';
+                
+                if (this.tileTheme === 'traditional') {
+                    if (data.suit === 'Dots') {
+                        if (data.value === 1) {
+                            return `
+                                <div class="w-full h-full flex flex-col justify-center items-center relative">
+                                    <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">1</span>
+                                    <svg viewBox="0 0 100 100" class="w-11/12 h-11/12 drop-shadow-sm">
+                                        <circle cx="50" cy="50" r="44" fill="#1e3a8a" stroke="#2563eb" stroke-width="1.5" />
+                                        <circle cx="50" cy="50" r="39" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3, 2" />
+                                        <circle cx="50" cy="50" r="35" fill="#dc2626" />
+                                        <path d="M 50 15 L 50 85 M 15 50 L 85 50 M 25 25 L 75 75 M 25 75 L 75 25" stroke="#ffffff" stroke-width="1" stroke-dasharray="2, 2" />
+                                        <circle cx="50" cy="50" r="24" fill="#15803d" />
+                                        <circle cx="50" cy="50" r="14" fill="#fbbf24" stroke="#d97706" stroke-width="1" />
+                                        <circle cx="50" cy="50" r="6" fill="#dc2626" />
+                                        <circle cx="50" cy="50" r="2" fill="#ffffff" />
+                                    </svg>
+                                </div>
+                            `;
+                        }
+                        
+                        let dotsSvg = '';
+                        const dotPositions = {
+                            2: [[50,26], [50,74]],
+                            3: [[26,26], [50,50], [74,74]],
+                            4: [[28,28], [72,28], [28,72], [72,72]],
+                            5: [[26,26], [74,26], [50,50], [26,74], [74,74]],
+                            6: [[30,24], [70,24], [30,50], [70,50], [30,76], [70,76]],
+                            7: [[30,22], [70,22], [30,44], [50,52], [70,44], [30,78], [70,78]],
+                            8: [[30,19], [70,19], [30,39], [70,39], [30,59], [70,59], [30,79], [70,79]],
+                            9: [[24,24], [50,24], [76,24], [24,50], [50,50], [76,50], [24,76], [50,76], [76,76]]
+                        };
+                        const dots = dotPositions[data.value] || [];
+                        dots.forEach((pos, idx) => {
+                            const color = (data.value === 7 && idx === 3) || idx % 3 === 0 ? '#dc2626' : (idx % 2 === 0 ? '#15803d' : '#2563eb');
+                            const strokeColor = color === '#fbbf24' ? '#d97706' : '#ffffff';
+                            dotsSvg += `
+                                <g transform="translate(${pos[0]}, ${pos[1]})">
+                                    <circle cx="0" cy="0" r="9" fill="${color}" stroke="${strokeColor}" stroke-width="0.8" />
+                                    <circle cx="0" cy="0" r="5" fill="none" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="1.5, 1" />
+                                    <circle cx="0" cy="0" r="2" fill="#fbbf24" />
+                                </g>
+                            `;
+                        });
+                        return `
+                            <div class="w-full h-full flex flex-col justify-center items-center relative">
+                                <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value}</span>
+                                <svg viewBox="0 0 100 100" class="w-10/12 h-10/12 drop-shadow-xs">${dotsSvg}</svg>
+                            </div>
+                        `;
+                    }
+
+                    if (data.suit === 'Bamboos') {
+                        if (data.value === 1) {
+                            return `
+                                <div class="w-full h-full flex flex-col justify-center items-center relative">
+                                    <span class="absolute top-0.5 left-1 font-extrabold text-emerald-600 text-[8px]">1</span>
+                                    <svg viewBox="0 0 100 100" class="w-11/12 h-11/12 drop-shadow-sm">
+                                        <path d="M 15,80 Q 50,70 85,82" stroke="#a16207" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                                        <path d="M 28,76 Q 32,60 22,54" stroke="#16a34a" stroke-width="1.8" fill="none"/>
+                                        <path d="M 72,78 Q 78,64 86,68" stroke="#16a34a" stroke-width="1.8" fill="none"/>
+                                        <path d="M 50,55 L 20,25 M 50,55 L 30,16 M 50,55 L 50,12 M 50,55 L 70,16 M 50,55 L 80,25" stroke="#15803d" stroke-width="2.2" stroke-linecap="round"/>
+                                        <circle cx="20" cy="25" r="4.5" fill="#2563eb" stroke="#fbbf24" stroke-width="1"/>
+                                        <circle cx="30" cy="16" r="4.5" fill="#dc2626" stroke="#fbbf24" stroke-width="1"/>
+                                        <circle cx="50" cy="12" r="4.5" fill="#2563eb" stroke="#fbbf24" stroke-width="1"/>
+                                        <circle cx="70" cy="16" r="4.5" fill="#dc2626" stroke="#fbbf24" stroke-width="1"/>
+                                        <circle cx="80" cy="25" r="4.5" fill="#15803d" stroke="#fbbf24" stroke-width="1"/>
+                                        <path d="M 50,74 C 36,74 36,54 45,46 C 40,40 44,28 50,28 C 55,28 58,36 53,44 C 62,54 62,74 50,74 Z" fill="#1d4ed8" />
+                                        <path d="M 45,52 C 40,56 41,66 46,70 C 47,62 49,56 45,52 Z" fill="#eab308" />
+                                        <path d="M 55,52 C 60,56 59,66 54,70 C 53,62 51,56 55,52 Z" fill="#eab308" />
+                                        <circle cx="50" cy="31" r="4" fill="#1d4ed8"/>
+                                        <polygon points="48,31 52,31 50,37" fill="#fbbf24"/>
+                                        <path d="M 50,27 L 48,22 M 50,27 L 50,20 M 50,27 L 52,22" stroke="#eab308" stroke-width="1" />
+                                        <circle cx="48" cy="21" r="1.2" fill="#dc2626"/>
+                                        <circle cx="50" cy="19" r="1.2" fill="#dc2626"/>
+                                        <circle cx="52" cy="21" r="1.2" fill="#dc2626"/>
+                                        <ellipse cx="50" cy="58" rx="4" ry="7" fill="#ffffff" opacity="0.95"/>
+                                    </svg>
+                                </div>
+                            `;
+                        }
+
+                        let sticksSvg = '';
+                        const stickPositions = {
+                            2: [[50,30, '#15803d'], [50,70, '#15803d']],
+                            3: [[50,28, '#15803d'], [35,70, '#1d4ed8'], [65,70, '#15803d']],
+                            4: [[35,30, '#1d4ed8'], [65,30, '#15803d'], [35,70, '#15803d'], [65,70, '#1d4ed8']],
+                            5: [[30,28, '#15803d'], [70,28, '#1d4ed8'], [50,50, '#dc2626'], [30,72, '#15803d'], [70,72, '#15803d']],
+                            6: [[30,30, '#15803d'], [50,30, '#15803d'], [70,30, '#15803d'], [30,70, '#1d4ed8'], [50,70, '#15803d'], [70,70, '#1d4ed8']],
+                            7: [[50,22, '#dc2626'], [25,52, '#15803d'], [50,52, '#15803d'], [75,52, '#15803d'], [25,82, '#1d4ed8'], [50,82, '#15803d'], [75,82, '#1d4ed8']],
+                            8: [[30,25, '#15803d'], [50,25, '#15803d'], [70,25, '#1d4ed8'], [40,50, '#dc2626'], [60,50, '#dc2626'], [30,75, '#15803d'], [50,75, '#15803d'], [70,75, '#1d4ed8']],
+                            9: [[25,25, '#15803d'], [50,25, '#15803d'], [75,25, '#15803d'], [25,50, '#1d4ed8'], [50,50, '#dc2626'], [75,50, '#1d4ed8'], [25,75, '#15803d'], [50,75, '#1d4ed8'], [75,75, '#15803d']]
+                        };
+                        const sticks = stickPositions[data.value] || [];
+                        sticks.forEach(pos => {
+                            sticksSvg += `
+                                <g transform="translate(${pos[0]-6}, ${pos[1]-12})">
+                                    <rect x="2" y="0" width="8" height="9" rx="1.5" fill="${pos[2]}" />
+                                    <rect x="2" y="11" width="8" height="9" rx="1.5" fill="${pos[2]}" />
+                                    <rect x="1" y="8" width="10" height="3" rx="0.8" fill="#eab308" />
+                                    <line x1="2" y1="9.5" x2="10" y2="9.5" stroke="#ffffff" stroke-width="0.8" />
+                                    <circle cx="6" cy="4.5" r="1" fill="#ffffff" />
+                                    <circle cx="6" cy="15.5" r="1" fill="#ffffff" />
+                                </g>
+                            `;
+                        });
+                        return `
+                            <div class="w-full h-full flex flex-col justify-center items-center relative">
+                                <span class="absolute top-0.5 left-1 font-extrabold text-emerald-600 text-[8px]">${data.value}</span>
+                                <svg viewBox="0 0 100 100" class="w-10/12 h-10/12 drop-shadow-xs">${sticksSvg}</svg>
+                            </div>
+                        `;
+                    }
+
+                    if (data.suit === 'Characters') {
+                        const characterVal = hanziNums[data.value];
+                        const charColor = data.value === 9 ? 'text-red-600' : 'text-slate-800';
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value}</span>
+                            <span class="${charColor} font-black font-chinese leading-none -mt-1 text-[21px] tracking-tighter drop-shadow-xs">${characterVal}</span>
+                            <span class="text-red-600 font-extrabold font-chinese leading-none text-xs mt-0.5 drop-shadow-xs">萬</span>
+                        `;
+                    }
+
+                    if (data.suit === 'Winds') {
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-blue-500 text-[8px]">${data.value}</span>
+                            <span class="text-slate-900 font-black font-chinese text-[21px] mt-0.5 drop-shadow-xs">${data.symbol}</span>
+                            <span class="text-[5px] uppercase tracking-wider text-slate-400 font-bold leading-none mt-0.5">${data.label}</span>
+                        `;
+                    }
+
+                    if (data.suit === 'Dragons') {
+                        if (data.value === 'White') {
+                            return `
+                                <div class="w-full h-full flex flex-col justify-center items-center relative p-1">
+                                    <span class="absolute top-0.5 left-1 font-extrabold text-blue-500 text-[8px]">B</span>
+                                    <svg viewBox="0 0 100 100" class="w-10/12 h-10/12 drop-shadow-xs">
+                                        <rect x="8" y="10" width="84" height="80" rx="6" fill="none" stroke="#2563eb" stroke-width="6.5" />
+                                        <rect x="18" y="20" width="64" height="60" rx="2" fill="none" stroke="#1d4ed8" stroke-width="1.5" stroke-dasharray="6,3" />
+                                    </svg>
+                                </div>
+                            `;
+                        }
+                        const dragonColor = data.value === 'Red' ? '#dc2626' : '#15803d';
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value[0]}</span>
+                            <span class="font-black font-chinese text-[23px] mt-0.5 drop-shadow-xs" style="color: ${dragonColor}">${data.symbol}</span>
+                            <span class="text-[5px] font-bold leading-none mt-0.5" style="color: ${dragonColor}">${data.label.toUpperCase()}</span>
+                        `;
+                    }
+
+                    if (data.suit === 'Flowers') {
+                        return `
+                            <span class="absolute top-0.5 left-1 text-[8px]">🌸</span>
+                            <span class="text-[20px] filter drop-shadow-xs leading-none mt-1">${data.symbol}</span>
+                            <span class="text-[5.5px] uppercase tracking-wider text-purple-600 font-black mt-1 leading-none">${data.label}</span>
+                        `;
+                    }
+
+                    if (data.suit === 'Seasons') {
+                        return `
+                            <span class="absolute top-0.5 left-1 text-[8px]">🍁</span>
+                            <span class="text-[20px] filter drop-shadow-xs leading-none mt-1">${data.symbol}</span>
+                            <span class="text-[5.5px] uppercase tracking-wider text-amber-600 font-black mt-1 leading-none">${data.label}</span>
+                        `;
+                    }
+                }
+
+                if (this.tileTheme === 'modern') {
+                    if (data.suit === 'Dots') {
+                        const dotsEmojis = ["", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫", "⚪"];
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value}</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">${dotsEmojis[data.value]}</span>
+                            <span class="text-[5px] uppercase text-rose-500 font-extrabold mt-1">Puntos</span>
+                        `;
+                    }
+                    if (data.suit === 'Bamboos') {
+                        if (data.value === 1) {
+                            return `
+                                <span class="absolute top-0.5 left-1 font-extrabold text-emerald-500 text-[8px]">1</span>
+                                <span class="text-lg filter drop-shadow-sm leading-none mt-1">🦚</span>
+                                <span class="text-[5px] uppercase text-emerald-600 font-extrabold mt-1">Faisán</span>
+                            `;
+                        }
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-emerald-500 text-[8px]">${data.value}</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">🎋</span>
+                            <span class="text-[5px] uppercase text-emerald-600 font-extrabold mt-1">Bambú x${data.value}</span>
+                        `;
+                    }
+                    if (data.suit === 'Characters') {
+                        const styleColors = ["", "text-red-500", "text-orange-500", "text-amber-500", "text-yellow-500", "text-green-500", "text-teal-500", "text-blue-500", "text-indigo-500", "text-purple-500"];
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value}</span>
+                            <span class="font-black text-xl leading-none ${styleColors[data.value]} mt-1">${data.value}</span>
+                            <span class="text-[5px] uppercase text-slate-400 font-extrabold mt-1">Carac</span>
+                        `;
+                    }
+                    if (data.suit === 'Winds') {
+                        const windEmojis = { 'E': '🌅', 'S': '☀️', 'W': '🌇', 'N': '❄️' };
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-sky-400 text-[8px]">${data.value}</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">${windEmojis[data.value] || '💨'}</span>
+                            <span class="text-[5px] uppercase text-sky-400 font-extrabold mt-1">Viento</span>
+                        `;
+                    }
+                    if (data.suit === 'Dragons') {
+                        const dragonEmojis = { 'Red': '🐲', 'Green': '🐉', 'White': '🔮' };
+                        const colors = { 'Red': 'text-rose-500', 'Green': 'text-emerald-500', 'White': 'text-violet-400' };
+                        return `
+                            <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[8px]">${data.value[0]}</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">${dragonEmojis[data.value] || '🐉'}</span>
+                            <span class="text-[5px] uppercase font-bold ${colors[data.value]} mt-1">${data.label}</span>
+                        `;
+                    }
+                    if (data.suit === 'Flowers') {
+                        return `
+                            <span class="absolute top-0.5 left-1 text-[8px]">🌸</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">${data.symbol}</span>
+                            <span class="text-[5px] uppercase text-fuchsia-500 font-extrabold mt-1">${data.label}</span>
+                        `;
+                    }
+                    if (data.suit === 'Seasons') {
+                        return `
+                            <span class="absolute top-0.5 left-1 text-[8px]">🍁</span>
+                            <span class="text-lg filter drop-shadow-sm leading-none mt-1">${data.symbol}</span>
+                            <span class="text-[5px] uppercase text-amber-500 font-extrabold mt-1">${data.label}</span>
+                        `;
+                    }
+                }
+
+                if (this.tileTheme === 'numbers') {
+                    let mainSymbol = '';
+                    let subText = '';
+                    let cardColor = 'text-slate-800';
+
+                    if (data.suit === 'Dots') {
+                        mainSymbol = data.value; subText = 'PUNTOS'; cardColor = 'text-blue-600';
+                    } else if (data.suit === 'Bamboos') {
+                        mainSymbol = data.value; subText = 'BAMBÚ'; cardColor = 'text-emerald-600';
+                    } else if (data.suit === 'Characters') {
+                        mainSymbol = data.value; subText = 'NÚMERO'; cardColor = 'text-amber-600';
+                    } else if (data.suit === 'Winds') {
+                        mainSymbol = data.value; subText = data.label.toUpperCase(); cardColor = 'text-indigo-600';
+                    } else if (data.suit === 'Dragons') {
+                        mainSymbol = data.value === 'Red' ? 'RED' : (data.value === 'Green' ? 'GRN' : 'WHT');
+                        subText = 'DRAGÓN';
+                        cardColor = data.value === 'Red' ? 'text-rose-600' : (data.value === 'Green' ? 'text-emerald-700' : 'text-slate-500');
+                    } else if (data.suit === 'Flowers') {
+                        mainSymbol = 'FLOR'; subText = data.label.toUpperCase(); cardColor = 'text-purple-600';
+                    } else if (data.suit === 'Seasons') {
+                        mainSymbol = 'EST.'; subText = data.label.toUpperCase(); cardColor = 'text-orange-600';
+                    }
+
+                    return `
+                        <span class="absolute top-0.5 left-1 font-extrabold text-slate-400 text-[7px]">${data.suit[0]}</span>
+                        <div class="flex-grow flex items-center justify-center w-full">
+                            <span class="font-black tracking-tight leading-none ${cardColor} text-base">${mainSymbol}</span>
+                        </div>
+                        <span class="text-[5px] tracking-wider font-extrabold text-slate-400 mb-0.5">${subText}</span>
+                    `;
+                }
+                return '';
+            },
+
+            startTimer() {
+                this.stopTimer();
+                this.timerInterval = setInterval(() => {
+                    this.timer++;
+                    this.updateTimerDisplay();
+                }, 1000);
+            },
+
+            stopTimer() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+            },
+
+            updateTimerDisplay() {
+                const mins = Math.floor(this.timer / 60);
+                const secs = this.timer % 60;
+                document.getElementById('txtTimer').textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            updateUIStats() {
+                document.getElementById('txtScore').textContent = this.score;
+                const remaining = this.activeTiles.filter(t => !t.matched).length;
+                document.getElementById('txtTilesLeft').textContent = remaining;
+
+                document.getElementById('btnUndo').disabled = this.history.length === 0;
+
+                const pairs = this.getAvailablePairs();
+                const movesLabel = document.getElementById('txtMoves');
+                movesLabel.textContent = pairs.length;
+                if (pairs.length === 0) {
+                    movesLabel.className = "text-xs sm:text-sm font-extrabold text-rose-500 animate-pulse";
+                } else {
+                    movesLabel.className = "text-xs sm:text-sm font-bold text-amber-400";
+                }
+            }
+        };
+
+        function showLoader(show) {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                if (show) loader.classList.remove('hidden');
+                else loader.classList.add('hidden');
+            }
+        }
+
+        let toastTimeout = null;
+        function showToast(text) {
+            const toast = document.getElementById('toastMessage');
+            const toastText = document.getElementById('toastText');
+            if (!toast || !toastText) return;
+
+            toastText.textContent = text;
+            toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+            
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        function showGameOverModal(show, score, time) {
+            const modal = document.getElementById('modalGameOver');
+            if (!modal) return;
+
+            if (show) {
+                const mins = Math.floor(time / 60).toString().padStart(2, '0');
+                const secs = (time % 60).toString().padStart(2, '0');
+                
+                document.getElementById('finalScore').textContent = score;
+                document.getElementById('finalTime').textContent = `${mins}:${secs}`;
+                
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        window.onload = function() {
+            Particles.init();
+
+            // Evento unificado para iOS Safari (touchstart, pointerdown y click)
+            const unlockAudio = () => {
+                if (!SoundFX.ctx) {
+                    SoundFX.init();
+                }
+            };
+            document.body.addEventListener('pointerdown', unlockAudio, { once: true });
+            document.body.addEventListener('touchstart', unlockAudio, { once: true });
+            document.body.addEventListener('click', unlockAudio, { once: true });
+
+            GameState.init('turtle');
+            
+            // Forzar doble renderizado inicial rápido para asegurar colocación correcta
+            setTimeout(() => {
+                showLoader(false);
+                GameState.renderBoard();
+            }, 150);
+
+            setTimeout(() => {
+                GameState.renderBoard();
+            }, 450);
+
+            // Escuchadores del menú superior
+            document.getElementById('layoutSelect').addEventListener('change', (e) => {
+                showLoader(true);
+                setTimeout(() => {
+                    GameState.init(e.target.value);
+                    GameState.renderBoard();
+                    showLoader(false);
+                }, 100);
+            });
+
+            document.getElementById('themeSelect').addEventListener('change', (e) => {
+                GameState.tileTheme = e.target.value;
+                GameState.renderBoard();
+            });
+
+            // Usamos evento resize nativo optimizado con debouncing implícito
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (GameState.gameStarted) {
+                        GameState.renderBoard();
+                    }
+                }, 100);
+            });
+
+            // Soporte específico para rotaciones de pantalla en iPhone
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    if (GameState.gameStarted) {
+                        GameState.renderBoard();
+                    }
+                }, 200);
+            });
+
+            // Botones inferiores
+            document.getElementById('btnUndo').addEventListener('click', () => GameState.undo());
+            document.getElementById('btnHint').addEventListener('click', () => GameState.showHint());
+            document.getElementById('btnShuffle').addEventListener('click', () => GameState.shuffle());
+            
+            document.getElementById('btnRestart').addEventListener('click', () => {
+                GameState.init(GameState.layoutName);
+                GameState.renderBoard();
+                showToast("Tablero reiniciado");
+            });
+
+            const modalRules = document.getElementById('modalRules');
+            document.getElementById('btnRules').addEventListener('click', () => {
+                modalRules.classList.remove('hidden');
+            });
+            document.getElementById('btnCloseRules').addEventListener('click', () => {
+                modalRules.classList.add('hidden');
+            });
+
+            const btnSound = document.getElementById('btnSound');
+            const soundIcon = document.getElementById('soundIcon');
+            btnSound.addEventListener('click', () => {
+                SoundFX.enabled = !SoundFX.enabled;
+                if (SoundFX.enabled) {
+                    soundIcon.className = "fas fa-volume-up";
+                    btnSound.classList.remove('opacity-50');
+                    SoundFX.playClick();
+                } else {
+                    soundIcon.className = "fas fa-volume-mute";
+                    btnSound.classList.add('opacity-50');
+                }
+            });
+
+            document.getElementById('btnPlayAgain').addEventListener('click', () => {
+                showGameOverModal(false);
+                GameState.init(GameState.layoutName);
+                GameState.renderBoard();
+            });
+
+            document.getElementById('btnShare').addEventListener('click', () => {
+                const score = GameState.score;
+                const time = document.getElementById('txtTimer').textContent;
+                const text = `🀄 Mahjong Zen Clásico Premium\nPuntos: ${score}\nTiempo: ${time}\n¡Jugando gratis y sin anuncios molestos!`;
+                
+                const tempInput = document.createElement('textarea');
+                tempInput.value = text;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showToast("¡Récord copiado al portapapeles!");
+                } catch (err) {
+                    console.error("Error al copiar");
+                }
+                document.body.removeChild(tempInput);
+            });
+        };
+    </script>
+</body>
+</html>
